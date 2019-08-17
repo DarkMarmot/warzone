@@ -1,6 +1,4 @@
-
 defmodule Warzone.Command do
-
   alias __MODULE__
   defstruct name: nil, params: %{}, error: nil, cost: 0
 
@@ -10,6 +8,7 @@ defmodule Warzone.Command do
       case k do
         "fire" ->
           {k, expand_fire_params(v)}
+
         _ when k in ["cloak", "thrust", "scan"] ->
           {k, [Map.new(v)]}
       end
@@ -20,7 +19,6 @@ defmodule Warzone.Command do
     |> Enum.map(&validate/1)
     |> Enum.map(&apply_energy_cost/1)
     |> apply_available_energy(available_energy)
-
   end
 
   def expand_fire_params(params) do
@@ -41,12 +39,11 @@ defmodule Warzone.Command do
       if cost <= n do
         {[c | result], n - cost}
       else
-        {[%Command{c | error: :not_enough_energy } | result], n}
+        {[%Command{c | error: :not_enough_energy} | result], n}
       end
     end)
     |> elem(0)
   end
-
 
   defp apply_defaults(%Command{name: "fire", params: params} = cmd) do
     new_params = Map.merge(%{"speed" => 0, "duration" => 1, "damage" => 1}, params)
@@ -70,12 +67,24 @@ defmodule Warzone.Command do
     cmd
   end
 
-  defp valid_params?(%Command{name: "fire", params: %{"damage" => damage, "duration" => duration, "speed" => speed, "direction" => direction}})
-       when is_number(damage) and is_number(duration) and is_number(speed) and is_number(direction) do
+  defp valid_params?(%Command{
+         name: "fire",
+         params: %{
+           "damage" => damage,
+           "duration" => duration,
+           "speed" => speed,
+           "direction" => direction
+         }
+       })
+       when is_number(damage) and is_number(duration) and is_number(speed) and
+              is_number(direction) do
     !(damage < 0 || duration < 1 || speed < 0)
   end
 
-  defp valid_params?(%Command{name: "thrust", params: %{"power" => power, "direction" => direction}})
+  defp valid_params?(%Command{
+         name: "thrust",
+         params: %{"power" => power, "direction" => direction}
+       })
        when is_number(power) and is_number(direction) do
     power > 0
   end
@@ -98,16 +107,16 @@ defmodule Warzone.Command do
     false
   end
 
-  defp energy_cost(%Command{name: "fire", params: %{"damage" => damage, "duration" => duration, "speed" => speed}} = cmd) do
+  defp energy_cost(
+         %Command{
+           name: "fire",
+           params: %{"damage" => damage, "duration" => duration, "speed" => speed}
+         } = cmd
+       ) do
     damage * (speed + 1) * duration
-  end
-
-  defp energy_cost(%Command{name: "log"}, _) do
-    0
   end
 
   defp energy_cost(%Command{params: %{"power" => power}}) do
     power
   end
-
 end

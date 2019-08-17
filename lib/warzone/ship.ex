@@ -1,33 +1,100 @@
-
-
-
-
 # to lua: ship (self), scan (ships, missiles, clock, range), clock
 
-defmodule SandWar.Ship do
-  alias __MODULE__
-  alias SandWar.Command
+defmodule Warzone.Ship do
+  alias Warzone.{Ship, Battle}
 
   @deg_to_radians :math.pi() / 180.0
   @max_energy 100
   @max_hull 100
   @recharge_rate 10
-  @drag_coef 0.8
+  @drag_coef 0.9
+  @repulsion_edge 1000
 
-  defstruct owner: nil,
+  defstruct id: nil,
+            name: nil,
+            code: nil,
+            playing: false,
+            commands: [],
+            spawn_counter: 30,
+            missiles_ready: [],
+            kills: 0,
+            deaths: 0,
+            age: 0,
+            messages: [],
             hull: @max_hull,
             energy: @max_energy,
             velocity: [0, 0],
             position: [0, 0],
             thrust: [0, 0],
-            log: nil,
-            radar: nil
+            view: nil,
+            ai_state: nil
 
-  #  def init_script(state) do
+  def generate_commands(%Ship{ai_state: nil}, base_ai) do
+    []
+  end
 
+  def generate_commands(%Ship{ai_state: {:ok, ai_chunk}, velocity: [vx, vy], position: [px, py], energy: energy, hull: hull} = ship, base_ai) do
+    base_ai
+    |> Sandbox.set!("status", %{velocity: %{x: vx, y: vy}, position: %{x: px, y: py}, energy: energy, hull: hull})
+    |> Sandbox.play!(ai_chunk)
+    |> Sandbox.get!("commands")
+    |> IO.inspect()
+  end
 
-  #
-  #  end
+  def update(%Ship{} = ship) do
+    ship
+    |> count()
+    |> move()
+    |> recharge()
+  end
+
+  def count(%Ship{playing: true, age: age} = ship) do
+    %Ship{ship | age: age + 1}
+  end
+
+  def count(%Ship{playing: false, spawn_counter: spawn_counter} = ship) do
+    %Ship{ship | spawn_counter: spawn_counter - 1}
+  end
+
+  def move(%Ship{energy: energy, velocity: [vx, vy], position: [px, py]} = ship) do
+    new_vx = vx * @drag_coef
+    new_vy = vy * @drag_coef
+    %Ship{ship | velocity: [new_vx, new_vy], position: [px + new_vx, py + new_vy]}
+  end
+
+  def recharge(%Ship{energy: energy} = ship) do
+    %Ship{ship | energy: min(energy + @recharge_rate, @max_energy)}
+  end
+
+  # commands
+
+  def thrust(
+        %Ship{velocity: [vx, vy]} = ship,
+        power,
+        direction_as_degrees
+      ) do
+    radians = @deg_to_radians * direction_as_degrees
+    thrust_vx = :math.cos(radians) * power
+    thrust_vy = :math.sin(radians) * power
+    new_vx = vx + thrust_vx
+    new_vy = vy + thrust_vy
+
+    %Ship{
+      ship
+      | velocity: [new_vx, new_vy],
+        thrust: [thrust_vx, thrust_vy]
+    }
+  end
+
+  def scan(%Ship{} = ship) do
+  end
+
+  def cloak(%Ship{} = ship) do
+  end
+
+  def fire(%Ship{} = ship) do
+  end
+
   #
   #  def update_script(%Ship{} = ship, state) do
   #    import SandBox
@@ -53,12 +120,7 @@ defmodule SandWar.Ship do
   #
   #  end
 
-
-
   # joins all params into action sets for firing multiple missiles, returns list of maps
-
-
-
 
   #  def process_commands(%Ship{commands: commands} = ship) do
   #
@@ -181,5 +243,4 @@ defmodule SandWar.Ship do
   #      false -> ship
   #    end
   #  end
-
 end

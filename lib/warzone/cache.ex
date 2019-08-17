@@ -7,11 +7,9 @@ defmodule Warzone.Cache do
   end
 
   def save(key, value) do
-
   end
 
   def load(key) do
-
   end
 
   @impl true
@@ -20,11 +18,8 @@ defmodule Warzone.Cache do
     :ets.new(Warzone.Cache, [:set, :protected, :named_table, read_concurrency: true])
     file = "ship.lua"
     code_path = Path.join(:code.priv_dir(:warzone), file)
-    file_contents = File.read!(code_path)
-    chunk = Sandbox.chunk!(Sandbox.init(), file_contents)
-    IO.inspect(chunk)
+    ship_state = Sandbox.play_file!(Sandbox.init(), code_path)
+    IO.inspect(ship_state)
     {:ok, state}
   end
-
-
 end

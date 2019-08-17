@@ -5,8 +5,11 @@ defmodule Warzone.Application do
 
   def start(_type, _args) do
     IO.puts("app start!")
+
     children = [
-       {Warzone.Cache, []}
+      {Warzone.Cache, []},
+      {Task.Supervisor, name: Warzone.TaskSupervisor},
+      {Warzone.BattleServer, []}
     ]
 
     opts = [strategy: :one_for_one, name: Warzone.Supervisor]
