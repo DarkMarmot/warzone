@@ -3,8 +3,9 @@ defmodule Warzone.BattleServer do
 
   use GenServer
 
-  @physics_timestep 500
-  @input_timestep 2500
+  @physics_timestep 1000
+  @input_timestep 5000
+  @updates_per_input @input_timestep / @physics_timestep
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %Battle{}, name: __MODULE__)
@@ -77,16 +78,9 @@ defmodule Warzone.BattleServer do
     {:noreply, Battle.update(battle)}
   end
 
-#  def handle_info(:input, %Battle{} = battle) do
-#    Process.send_after(self(), :generate_commands, 500)
-#    {:noreply, Battle.update(battle)}
-#  end
-
-
   def handle_info({ref, {:commands_by_id, commands_by_id}}, %Battle{} = battle) when is_reference(ref) do
-#    IO.puts("cid #{inspect(commands_by_id)}")
     Process.demonitor(ref, [:flush])
-    {:noreply, %Battle{battle | commands_by_id: commands_by_id}}
+    {:noreply, battle |> Battle.distribute_commands_to_ships(commands_by_id)}
   end
 
   def handle_info({ref, {:submitted_code, id, code, ai_state}}, %Battle{} = battle) when is_reference(ref) do

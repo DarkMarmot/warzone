@@ -3,7 +3,7 @@ defmodule Warzone.Battle do
 
   @realm_size 10000
   @missile_size 0
-  @ship_size 50
+  @ship_size 100
   @hash_size 1000
 
   # cloak = -power * 500
@@ -11,8 +11,7 @@ defmodule Warzone.Battle do
   # damage = power * 5, cost = (power + 1) * 5 -- speed 200, duration 25 ticks
   # thrust = power, max speed = 100
 
-  defstruct base_ai: nil, ships_by_id: %{}, missiles_by_id: %{}, collisions: [], commands_by_id: %{}, stardate: 0, id_counter: 0
-
+  defstruct base_ai: nil, ships_by_id: %{}, missiles_by_id: %{}, ship_ids_by_spatial_hash: %{}, missile_ids_by_spatial_hash: %{}, collisions: [], commands_by_id: %{}, stardate: 0, id_counter: 0
 
   def join(%Battle{ships_by_id: ships_by_id} = battle, id) do
     put_ship(battle, %Ship{id: id, position: get_spawn_position()})
@@ -40,8 +39,10 @@ defmodule Warzone.Battle do
     |> spawn_fired_missiles_into_battle()
     |> clear_fired_missiles_from_ships()
     |> spawn_ships_into_battle()
+    |> generate_spatial_hashes()
     |> determine_collisions()
     |> resolve_collisions()
+    |> render_scanner_views()
 #    |> helm_ships()
 #   |> asteroid_damage() for things beyond bounds
 #   |> report_back()
@@ -98,8 +99,6 @@ defmodule Warzone.Battle do
     |> Map.to_list()
     |> Enum.flat_map(fn {id, %Ship{position: position}} ->
       hashes = get_spatial_hashes(position, @ship_size)
-#      IO.inspect("hashes #{inspect(hashes)}")
-
       hashes |> Enum.map(fn hash -> {hash, id} end)
     end)
     |> Enum.group_by(fn {hash, _id} -> hash end, fn {_hash, id} -> id end)
@@ -114,12 +113,18 @@ defmodule Warzone.Battle do
     |> Enum.group_by(fn {hash, _id} -> hash end, fn {_hash, id} -> id end)
   end
 
-  def determine_collisions(
-        %Battle{ships_by_id: ships_by_id, missiles_by_id: missiles_by_id} = battle
-      ) do
+  def generate_spatial_hashes(%Battle{} = battle) do
+    %Battle{battle |
+      ship_ids_by_spatial_hash: get_ship_ids_by_spatial_hash(battle),
+      missile_ids_by_spatial_hash: get_missile_ids_by_spatial_hash(battle)
+    }
+  end
 
-    ship_ids_by_spatial_hash = get_ship_ids_by_spatial_hash(battle)
-    missile_ids_by_spatial_hash = get_missile_ids_by_spatial_hash(battle)
+  def determine_collisions(
+        %Battle{ship_ids_by_spatial_hash: ship_ids_by_spatial_hash,
+missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
+          ships_by_id: ships_by_id, missiles_by_id: missiles_by_id} = battle
+      ) do
 
     hash_collisions =
       ship_ids_by_spatial_hash
@@ -140,9 +145,8 @@ defmodule Warzone.Battle do
           end)
         end)
         |> Enum.filter(fn %Collision{missile_id: missile_id, ship_id: ship_id} ->
-          owner_id = get_in(missiles_by_id, [missile_id, :owner_id])
-          missile_position = get_in(missiles_by_id, [missile_id, :position])
-          ship_position = get_in(ships_by_id, [ship_id, :position])
+          %Missile{owner_id: owner_id, position: missile_position} = get_missile(battle, missile_id)
+          %Ship{position: ship_position} = get_ship(battle, ship_id)
           owner_id != ship_id && distance(missile_position, ship_position) < @ship_size
         end)
       end)
@@ -155,17 +159,16 @@ defmodule Warzone.Battle do
     %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
   end
 
-  def perform_commands(%Battle{ships_by_id: ships_by_id} = battle) do
-    map_fun = fn %Ship{} = ship -> Ship.perform_commands(battle) end
-    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
-  end
+#  def perform_commands(%Battle{ships_by_id: ships_by_id} = battle) do
+#    map_fun = fn %Ship{} = ship ->
+#      Ship.perform_commands(ship, battle) end
+#    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
+#  end
 
-  def clear_commands(%Battle{ships_by_id: ships_by_id} = battle) do
-    map_fun = fn %Ship{} = ship -> %Ship{ship | commands: []} end
-    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
-  end
-
-
+#  def clear_commands(%Battle{ships_by_id: ships_by_id} = battle) do
+#    map_fun = fn %Ship{} = ship -> %Ship{ship | commands: []} end
+#    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
+#  end
 
   def spawn_ships_into_battle(%Battle{ships_by_id: ships_by_id} = battle) do
     map_fun = fn
@@ -187,6 +190,31 @@ defmodule Warzone.Battle do
 
   def advance_stardate(%Battle{stardate: stardate} = battle) do
     %Battle{battle | stardate: stardate + 1}
+  end
+
+  def distribute_commands_to_ships(%Battle{ships_by_id: ships_by_id} = battle, commands_by_id) do
+
+#    IO.inspect("cid: #{inspect(commands_by_id)}")
+
+    map_fun = fn %Ship{id: id} = ship ->
+      commands = Map.get(commands_by_id, id, [])
+      fresh_helm = Ship.clear_commands(ship)
+      commands
+      |> Enum.reduce(fresh_helm, fn command, ship_acc ->
+        ship_acc |> Ship.perform_command(command)
+      end)
+    end
+
+    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
+  end
+
+  def render_scanner_view(%Battle{} = battle, %Ship{} = ship) do
+    ship
+  end
+
+  def render_scanner_views(%Battle{ships_by_id: ships_by_id} = battle) do
+    map_fun = fn %Ship{} = ship -> Battle.render_scanner_view(battle, ship) end
+    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
   end
 
   def generate_commands(%Battle{base_ai: base_ai, ships_by_id: ships_by_id} = battle) do
@@ -212,26 +240,14 @@ defmodule Warzone.Battle do
 
   def submit_code(%Battle{base_ai: base_ai} = battle, id, code) do
     chunk = Sandbox.chunk(base_ai, code)
-    IO.inspect(chunk)
     {:submitted_code, id, code, chunk}
   end
 
   def update_code(%Battle{} = battle, id, code, ai_state) do
     ship = %Ship{get_ship(battle, id) | code: code, ai_state: ai_state}
-    IO.puts(inspect(ship))
+    IO.puts("update code: #{inspect(id)} ")
     battle |> put_ship(ship)
   end
-
-#  def helm_ships(%Battle{stardate: stardate} = battle) do
-#    case rem(stardate, 4) do
-#      0 -> battle
-#           |> perform_commands()
-#           |> clear_commands()
-#           |> request_commands()
-#      _ ->
-#        battle
-#    end
-#  end
 
   def submit_name(%Battle{} = battle, id, name) do
     ship = %Ship{get_ship(battle, id) | name: name}
@@ -240,6 +256,10 @@ defmodule Warzone.Battle do
 
   def get_ship(%Battle{ships_by_id: ships_by_id}, id) do
     Map.get(ships_by_id, id)
+  end
+
+  def get_missile(%Battle{missiles_by_id: missiles_by_id}, id) do
+    Map.get(missiles_by_id, id)
   end
 
   def put_ship(%Battle{ships_by_id: ships_by_id} = battle, %Ship{id: id} = ship) do

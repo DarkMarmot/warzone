@@ -1,14 +1,14 @@
 # to lua: ship (self), scan (ships, missiles, clock, range), clock
 
 defmodule Warzone.Ship do
-  alias Warzone.{Ship, Battle}
+  alias Warzone.{Ship, Battle, Command, Missile}
 
   @deg_to_radians :math.pi() / 180.0
   @max_energy 100
   @max_hull 100
-  @recharge_rate 10
-  @drag_coef 0.9
-  @repulsion_edge 1000
+  @recharge_rate 1
+  @drag_coef 0.85
+  @missile_speed 30
 
   defstruct id: nil,
             name: nil,
@@ -16,6 +16,7 @@ defmodule Warzone.Ship do
             playing: false,
             commands: [],
             spawn_counter: 30,
+            missile_counter: 0,
             missiles_ready: [],
             kills: 0,
             deaths: 0,
@@ -25,6 +26,8 @@ defmodule Warzone.Ship do
             energy: @max_energy,
             velocity: [0, 0],
             position: [0, 0],
+            cloaking_power: 0,
+            scanning_power: 0,
             thrust: [0, 0],
             view: nil,
             ai_state: nil
@@ -38,7 +41,18 @@ defmodule Warzone.Ship do
     |> Sandbox.set!("status", %{velocity: %{x: vx, y: vy}, position: %{x: px, y: py}, energy: energy, hull: hull})
     |> Sandbox.play!(ai_chunk)
     |> Sandbox.get!("commands")
+    |> parse_lua_commands()
     |> IO.inspect()
+  end
+
+  def parse_lua_commands(commands) do
+#    [{1, [{"angle", 0.0}, {"name", "thrust"}, {"power", 3.0}]}]
+    commands
+    |> Map.new()
+    |> Map.values()
+    |> Enum.map(&Map.new/1)
+    |> Enum.map(fn m -> %Command{name: Map.get(m, "name"), angle: Map.get(m, "angle"), power: Map.get(m, "power")} end)
+
   end
 
   def update(%Ship{} = ship) do
@@ -46,6 +60,26 @@ defmodule Warzone.Ship do
     |> count()
     |> move()
     |> recharge()
+  end
+
+  def clear_commands(%Ship{} = ship) do
+    %Ship{ship | commands: [], thrust: [0, 0], scanning_power: 0, cloaking_power: 0}
+  end
+
+  def perform_command(%Ship{energy: energy, commands: commands} = ship, %Command{name: name, power: power} = command) do
+
+      case name do
+        "fire" -> fire(ship, command)
+        "thrust" -> thrust(ship, command)
+        "cloak" -> cloak(ship, command)
+        "scan" -> scan(ship, command)
+        _ -> ship
+      end
+
+  end
+
+  def not_enough_energy(%Ship{energy: energy, commands: commands} = ship, %Command{} = command) do
+    %Ship{ship | commands: [%Command{command | error: "not enough energy"} | commands]}
   end
 
   def count(%Ship{playing: true, age: age} = ship) do
@@ -56,9 +90,9 @@ defmodule Warzone.Ship do
     %Ship{ship | spawn_counter: spawn_counter - 1}
   end
 
-  def move(%Ship{energy: energy, velocity: [vx, vy], position: [px, py]} = ship) do
-    new_vx = vx * @drag_coef
-    new_vy = vy * @drag_coef
+  def move(%Ship{energy: energy, velocity: [vx, vy], position: [px, py], thrust: [tx, ty]} = ship) do
+    new_vx = (vx + tx / 10) * @drag_coef
+    new_vy = (vy + ty / 10) * @drag_coef
     %Ship{ship | velocity: [new_vx, new_vy], position: [px + new_vx, py + new_vy]}
   end
 
@@ -68,179 +102,45 @@ defmodule Warzone.Ship do
 
   # commands
 
-  def thrust(
-        %Ship{velocity: [vx, vy]} = ship,
-        power,
-        direction_as_degrees
-      ) do
-    radians = @deg_to_radians * direction_as_degrees
-    thrust_vx = :math.cos(radians) * power
-    thrust_vy = :math.sin(radians) * power
-    new_vx = vx + thrust_vx
-    new_vy = vy + thrust_vy
-
-    %Ship{
-      ship
-      | velocity: [new_vx, new_vy],
-        thrust: [thrust_vx, thrust_vy]
-    }
+  def thrust(%Ship{velocity: [vx, vy], thrust: [tx, ty], energy: energy, commands: commands} = ship, %Command{name: "thrust", power: power, angle: angle} = command) do
+    # multiple small thrusts can be added together in one command set
+    if power <= energy do
+      radians = @deg_to_radians * angle
+      new_tx = tx + :math.cos(radians) * power
+      new_ty = ty + :math.sin(radians) * power
+      %Ship{ship | energy: energy - power, thrust: [new_tx, new_ty], commands: [command | commands]}
+    else
+      ship |> Ship.not_enough_energy(command)
+    end
   end
 
-  def scan(%Ship{} = ship) do
+  def scan(%Ship{energy: energy, commands: commands} = ship, %Command{name: "scan", power: power} = command) do
+    if power <= energy do
+      %Ship{ship | energy: energy - power, scanning_power: power * 500 + 2000, commands: [command | commands]}
+    else
+      ship |> Ship.not_enough_energy(command)
+    end
   end
 
-  def cloak(%Ship{} = ship) do
+  def cloak(%Ship{energy: energy, commands: commands} = ship, %Command{name: "cloak", power: power} = command) do
+    if power <= energy do
+      %Ship{ship | energy: energy - power, cloaking_power: power * 500, commands: [command | commands]}
+    else
+      ship |> Ship.not_enough_energy(command)
+    end
   end
 
-  def fire(%Ship{} = ship) do
+  def fire(%Ship{id: id, energy: energy, commands: commands, missile_counter: missile_counter, missiles_ready: missiles_ready, position: position} = ship, %Command{name: "fire", power: power, angle: angle} = command) do
+    if (power > 2 && power <= energy) do
+      radians = @deg_to_radians * angle
+      vx = :math.cos(radians) * @missile_speed
+      vy = :math.sin(radians) * @missile_speed
+      missile = %Missile{id: {id, missile_counter}, owner_id: id, power: power - 2, velocity: [vx, vy], position: position}
+      %Ship{ship |energy: energy - power,  missiles_ready: [missile | missiles_ready], commands: [command | commands]}
+    else
+      ship |> Ship.not_enough_energy(command)
+    end
   end
 
-  #
-  #  def update_script(%Ship{} = ship, state) do
-  #    import SandBox
-  #    state
-  #    |> set("ship", ship)
-  #  end
-  #
-  #  def tick(%Ship{} = ship) do
-  #    ship
-  ##    |> update_clock()
-  #    |> recharge()
-  #    |> clear_actions()
-  #    |> process_commands()
-  #  end
-  #
-  #  def clear_actions(%Ship{} = ship) do
-  #    Map.put(ship, :actions, [])
-  #  end
 
-  #  def generate_actions(%Ship{commands: commands} = ship) when is_list(commands) do
-  #    commands
-  #    |> Enum.map(fn {k, v} -> to_action(name, args) end)
-  #
-  #  end
-
-  # joins all params into action sets for firing multiple missiles, returns list of maps
-
-  #  def process_commands(%Ship{commands: commands} = ship) do
-  #
-  #    Enum.reduce(commands, ship, fn
-  #      ["thrust", power, direction], ship_acc when is_number(power) and is_number(direction) ->
-  #        thrust(ship_acc, power, direction)
-  #
-  #      ["scan", power], ship_acc when is_number(power) ->
-  #        scan(ship_acc, power)
-  #
-  ##      ["cloak", power], ship_acc when is_number(power) ->
-  ##        cloak(ship_acc, power)
-  #
-  #      ["fire", damage, speed, duration, direction], ship_acc
-  #      when is_number(damage) and is_number(speed) and is_number(duration) and
-  #             is_number(direction) ->
-  #        fire(ship_acc, damage, speed, duration, direction)
-  #      _, ship_acc -> %Ship{ship_acc | actions: [:invalid_command | ship.actions]}
-  #    end)
-  #    |> Map.put(:commands, [])
-  #  end
-  #
-  #  def scan(
-  #        %Ship{energy: energy, velocity: [vx, vy], position: [px, py]} = ship,
-  #        power
-  #      ) do
-  ##    power_used = min(power, energy)
-  ##
-  ##    if power_used > 0 do
-  ##
-  ##    %Ship{
-  ##      ship
-  ##    | velocity: [new_vx, new_vy],
-  ##      position: [new_px, new_py],
-  ##      energy: energy - power_used,
-  ##      thrust: [thrust_vx, thrust_vy]
-  ##    }
-  ##    |> log_if(power_used < power, :partial_thrust)
-  ##    else
-  ##
-  ##    end
-  #  end
-  #
-  #  def thrust(
-  #        %Ship{energy: energy, velocity: [vx, vy], position: [px, py]} = ship,
-  #        power,
-  #        direction_as_degrees
-  #      ) do
-  #    power_used = min(power, energy)
-  #
-  #    radians = @deg_to_radians * direction_as_degrees
-  #    thrust_vx = :math.cos(radians) * power
-  #    thrust_vy = :math.sin(radians) * power
-  #    new_vx = thrust_vx + vx * @drag_coef
-  #    new_vy = thrust_vy * power + vy * @drag_coef
-  #    new_px = px + new_vx
-  #    new_py = py + new_vy
-  #
-  #    %Ship{
-  #      ship
-  #      | velocity: [new_vx, new_vy],
-  #        position: [new_px, new_py],
-  #        energy: energy - power_used,
-  #        thrust: [thrust_vx, thrust_vy]
-  #    }
-  #    |> log_if(power_used < power, :partial_thrust)
-  #  end
-  #
-  #  def fire(
-  #        %Ship{
-  #          owner: owner,
-  #          energy: energy,
-  #          velocity: [vx, vy],
-  #          position: position,
-  #          actions: log,
-  ##          missiles: missiles
-  #        } = ship,
-  #        damage,
-  #        speed,
-  #        duration,
-  #        direction_as_degrees
-  #      ) do
-  #    power_needed = damage * (speed + 1) * (duration + 1)
-  #    percent_available = if energy > 0, do: min(power_needed / energy, 1), else: 0
-  #    damage_used = floor(damage * percent_available)
-  #    power_used = damage_used * (speed + 1) * (duration + 1)
-  #
-  #    if power_used > 0 do
-  #      radians = @deg_to_radians * direction_as_degrees
-  #      new_vx = :math.cos(radians) * speed + vx
-  #      new_vy = :math.sin(radians) * speed + vy
-  #
-  #      missile = %SandWar.Missile{
-  #        owner: owner,
-  #        position: position,
-  #        velocity: [new_vx, new_vy],
-  #        damage: damage_used,
-  #        duration: duration
-  #      }
-  #
-  #      %Ship{ship | energy: energy - power_used, actions: [missile | missiles]}
-  #      |> log_if(power_used < power_needed, :partial_fire)
-  #    else
-  #      %Ship{ship | energy: 0, actions: [:misfire | log]}
-  #    end
-  #  end
-  #
-  #  def recharge(%Ship{energy: energy} = ship) do
-  #    new_energy = min(energy + @recharge_rate, @max_energy)
-  #    %Ship{ship | energy: new_energy}
-  #  end
-  #
-  ##  def update_clock(%Ship{clock: clock} = ship) do
-  ##    %Ship{ship | clock: clock + 1}
-  ##  end
-  #
-  #  defp log_if(%Ship{actions: log} = ship, conditional, message) do
-  #    case conditional do
-  #      true -> %Ship{ship | actions: [message | log]}
-  #      false -> ship
-  #    end
-  #  end
 end

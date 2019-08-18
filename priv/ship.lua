@@ -5,11 +5,9 @@ status = {hull=100, energy=100, position = {x=0, y=0}, velocity = {x=0, y=0}, st
 
 function fire(options)
 
-    local charge = options.charge or 1
+    local power = options.power or 1
     local angle = options.angle or 0
-    local duration = options.duration or 1
-    local speed = options.speed or 0
-    local cmd = {name="fire", charge=charge, angle=angle, duration=duration, speed=speed}
+    local cmd = {name="fire", power=power, angle=angle}
     table.insert(commands, cmd)
 
 end
