@@ -97,7 +97,7 @@ defmodule Warzone.Ship do
       "
     )
 
-#    IO.puts("send: #{inspect(id)}")
+    IO.puts("send: #{inspect(id)}")
     Process.send(id, {:ship_status, ship}, [])
 
     ship
