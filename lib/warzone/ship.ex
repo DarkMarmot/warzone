@@ -87,7 +87,7 @@ defmodule Warzone.Ship do
     |> Enum.map(fn m -> %Command{name: Map.get(m, "name"), param: Map.get(m, "param")} end)
   end
 
-  def update(%Ship{} = ship) do
+  def update(%Ship{id: id} = ship) do
     IO.puts(
       "energy: #{inspect(ship.energy)} velocity: #{inspect(trunc(ship.velocity |> Enum.at(0)))} #{
         inspect(trunc(ship.velocity |> Enum.at(1)))
@@ -96,6 +96,9 @@ defmodule Warzone.Ship do
       }
       "
     )
+
+#    IO.puts("send: #{inspect(id)}")
+    Process.send(id, {:ship_status, ship}, [])
 
     ship
     |> count()
