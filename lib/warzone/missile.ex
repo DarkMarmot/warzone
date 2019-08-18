@@ -9,5 +9,4 @@ defmodule Warzone.Missile do
 
   def update() do
   end
-
 end

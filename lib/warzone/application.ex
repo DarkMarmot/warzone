@@ -9,6 +9,7 @@ defmodule Warzone.Application do
     children = [
       {Warzone.Cache, []},
       {Task.Supervisor, name: Warzone.TaskSupervisor},
+      {Task.Supervisor, name: Warzone.SandboxTaskSupervisor},
       {Warzone.BattleServer, []}
     ]
 

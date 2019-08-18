@@ -11,15 +11,22 @@ defmodule Warzone.Battle do
   # damage = power * 5, cost = (power + 1) * 5 -- speed 200, duration 25 ticks
   # thrust = power, max speed = 100
 
-  defstruct base_ai: nil, ships_by_id: %{}, missiles_by_id: %{}, ship_ids_by_spatial_hash: %{}, missile_ids_by_spatial_hash: %{}, collisions: [], commands_by_id: %{}, stardate: 0, id_counter: 0
+  defstruct base_ai: nil,
+            ships_by_id: %{},
+            missiles_by_id: %{},
+            ship_ids_by_spatial_hash: %{},
+            missile_ids_by_spatial_hash: %{},
+            collisions: [],
+            commands_by_id: %{},
+            stardate: 0,
+            id_counter: 0
 
   def join(%Battle{ships_by_id: ships_by_id} = battle, id) do
     put_ship(battle, %Ship{id: id, position: get_spawn_position()})
   end
 
   def leave(%Battle{ships_by_id: ships_by_id} = battle, id) do
-    %Battle{battle | ships_by_id: Map.delete(ships_by_id, id)
-    }
+    %Battle{battle | ships_by_id: Map.delete(ships_by_id, id)}
   end
 
   def get_spawn_position() do
@@ -43,13 +50,15 @@ defmodule Warzone.Battle do
     |> determine_collisions()
     |> resolve_collisions()
     |> render_scanner_views()
-#    |> helm_ships()
-#   |> asteroid_damage() for things beyond bounds
-#   |> report_back()
+
+    #    |> helm_ships()
+    #   |> asteroid_damage() for things beyond bounds
+    #   |> report_back()
   end
 
-  def spawn_fired_missiles_into_battle(%Battle{ships_by_id: ships_by_id, missiles_by_id: missiles_by_id} = battle) do
-
+  def spawn_fired_missiles_into_battle(
+        %Battle{ships_by_id: ships_by_id, missiles_by_id: missiles_by_id} = battle
+      ) do
     missiles_ready =
       ships_by_id
       |> Enum.flat_map(fn {id, %Ship{missiles_ready: missiles_ready}} -> missiles_ready end)
@@ -68,7 +77,7 @@ defmodule Warzone.Battle do
         %Battle{collisions: collisions, ships_by_id: ships_by_id, missiles_by_id: missiles_by_id} =
           battle
       ) do
-      battle
+    battle
   end
 
   def get_spatial_hashes([x, y] = _position, 0 = _object_size) do
@@ -114,18 +123,21 @@ defmodule Warzone.Battle do
   end
 
   def generate_spatial_hashes(%Battle{} = battle) do
-    %Battle{battle |
-      ship_ids_by_spatial_hash: get_ship_ids_by_spatial_hash(battle),
-      missile_ids_by_spatial_hash: get_missile_ids_by_spatial_hash(battle)
+    %Battle{
+      battle
+      | ship_ids_by_spatial_hash: get_ship_ids_by_spatial_hash(battle),
+        missile_ids_by_spatial_hash: get_missile_ids_by_spatial_hash(battle)
     }
   end
 
   def determine_collisions(
-        %Battle{ship_ids_by_spatial_hash: ship_ids_by_spatial_hash,
-missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
-          ships_by_id: ships_by_id, missiles_by_id: missiles_by_id} = battle
+        %Battle{
+          ship_ids_by_spatial_hash: ship_ids_by_spatial_hash,
+          missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
+          ships_by_id: ships_by_id,
+          missiles_by_id: missiles_by_id
+        } = battle
       ) do
-
     hash_collisions =
       ship_ids_by_spatial_hash
       |> Map.keys()
@@ -145,7 +157,9 @@ missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
           end)
         end)
         |> Enum.filter(fn %Collision{missile_id: missile_id, ship_id: ship_id} ->
-          %Missile{owner_id: owner_id, position: missile_position} = get_missile(battle, missile_id)
+          %Missile{owner_id: owner_id, position: missile_position} =
+            get_missile(battle, missile_id)
+
           %Ship{position: ship_position} = get_ship(battle, ship_id)
           owner_id != ship_id && distance(missile_position, ship_position) < @ship_size
         end)
@@ -159,22 +173,23 @@ missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
     %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
   end
 
-#  def perform_commands(%Battle{ships_by_id: ships_by_id} = battle) do
-#    map_fun = fn %Ship{} = ship ->
-#      Ship.perform_commands(ship, battle) end
-#    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
-#  end
+  #  def perform_commands(%Battle{ships_by_id: ships_by_id} = battle) do
+  #    map_fun = fn %Ship{} = ship ->
+  #      Ship.perform_commands(ship, battle) end
+  #    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
+  #  end
 
-#  def clear_commands(%Battle{ships_by_id: ships_by_id} = battle) do
-#    map_fun = fn %Ship{} = ship -> %Ship{ship | commands: []} end
-#    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
-#  end
+  #  def clear_commands(%Battle{ships_by_id: ships_by_id} = battle) do
+  #    map_fun = fn %Ship{} = ship -> %Ship{ship | commands: []} end
+  #    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
+  #  end
 
   def spawn_ships_into_battle(%Battle{ships_by_id: ships_by_id} = battle) do
     map_fun = fn
       %Ship{spawn_counter: 0, playing: false} = ship -> %Ship{ship | playing: true}
       ship -> ship
     end
+
     %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
   end
 
@@ -193,12 +208,14 @@ missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
   end
 
   def distribute_commands_to_ships(%Battle{ships_by_id: ships_by_id} = battle, commands_by_id) do
-
-#    IO.inspect("cid: #{inspect(commands_by_id)}")
+    #    IO.inspect("cid: #{inspect(commands_by_id)}")
 
     map_fun = fn %Ship{id: id} = ship ->
-      %CommandSet{commands: commands, error: error} = Map.get(commands_by_id, id, %CommandSet{error: :missing_ai})
+      %CommandSet{commands: commands, error: error} =
+        Map.get(commands_by_id, id, %CommandSet{error: :missing_ai})
+
       fresh_helm = Ship.clear_commands(ship, error)
+
       commands
       |> Enum.reduce(fresh_helm, fn command, ship_acc ->
         ship_acc |> Ship.perform_command(command)
@@ -218,25 +235,35 @@ missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
   end
 
   def generate_commands(%Battle{base_ai: base_ai, ships_by_id: ships_by_id} = battle) do
+    # returns map of ship_id to command_list
+    default_failures =
+      ships_by_id
+      |> MapEnum.map(fn %Ship{id: id} = ship -> %CommandSet{id: id, error: :ai_timeout} end)
 
-      # returns map of ship_id to command_list
-    default_failures = ships_by_id |> MapEnum.map(fn %Ship{id: id} = ship -> %CommandSet{id: id, error: :ai_timeout} end)
+    #    commands_by_id =
+    #    Parallel.map(ships_by_id |> Map.values(), fn %Ship{} = ship -> Ship.generate_commands(ship, base_ai) end)
+    #    map_fun = fn %Ship{} = ship -> Ship.generate_commands(ship, base_ai) end
+    #    commands_by_id = MapEnum.pmap(ships_by_id, map_fun)
+    #    IO.inspect("xid: #{inspect(commands_by_id)}")
     commands_by_id =
-      Task.Supervisor.async_stream_nolink(Warzone.TaskSupervisor,
-      ships_by_id |> Map.values(),
-      fn %Ship{} = ship ->
-        Ship.generate_commands(ship, base_ai)
-      end,
-      ordered: false,
-      timeout: 500,
-      on_timeout: :kill_task)
-    |> Enum.filter(fn task_response -> match?({:ok, _}, task_response) end)
-    |> Enum.map(fn {:ok, %CommandSet{id: id} = command_set} -> {id, command_set} end)
-    |> Map.new()
+      Task.Supervisor.async_stream_nolink(
+        Warzone.SandboxTaskSupervisor,
+        ships_by_id |> Map.values(),
+        fn %Ship{} = ship ->
+          Ship.generate_commands(ship, base_ai)
+        end,
+        ordered: false
+      )
+      |> Enum.filter(fn task_response -> match?({:ok, _}, task_response) end)
+      |> Enum.map(fn {:ok, %CommandSet{id: id} = command_set} -> {id, command_set} end)
+      |> Map.new()
 
-    IO.inspect("commands:\n#{inspect(commands_by_id)}")
-    {:commands_by_id, commands_by_id}
+    IO.inspect(Task.Supervisor.children(Warzone.SandboxTaskSupervisor))
 
+    all_commands_by_id = Map.merge(default_failures, commands_by_id)
+
+    IO.inspect("commands:\n#{inspect(all_commands_by_id)}")
+    {:commands_by_id, all_commands_by_id}
   end
 
   def submit_code(%Battle{base_ai: base_ai} = battle, id, code) do
@@ -279,5 +306,4 @@ missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
     |> put_missile(%Missile{missile | id: id_counter})
     |> Map.put(:id_counter, id_counter + 1)
   end
-  
 end
