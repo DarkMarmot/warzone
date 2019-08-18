@@ -1,5 +1,5 @@
 defmodule Warzone.Battle do
-  alias Warzone.{Battle, Ship, Missile, Cache, Player, Collision, MapEnum}
+  alias Warzone.{Battle, Ship, Missile, Cache, CommandSet, Collision, MapEnum}
 
   @realm_size 10000
   @missile_size 0
@@ -197,8 +197,8 @@ missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
 #    IO.inspect("cid: #{inspect(commands_by_id)}")
 
     map_fun = fn %Ship{id: id} = ship ->
-      commands = Map.get(commands_by_id, id, [])
-      fresh_helm = Ship.clear_commands(ship)
+      %CommandSet{commands: commands, error: error} = Map.get(commands_by_id, id, %CommandSet{error: :missing_ai})
+      fresh_helm = Ship.clear_commands(ship, error)
       commands
       |> Enum.reduce(fresh_helm, fn command, ship_acc ->
         ship_acc |> Ship.perform_command(command)
@@ -220,18 +220,18 @@ missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
   def generate_commands(%Battle{base_ai: base_ai, ships_by_id: ships_by_id} = battle) do
 
       # returns map of ship_id to command_list
+    default_failures = ships_by_id |> MapEnum.map(fn %Ship{id: id} = ship -> %CommandSet{id: id, error: :ai_timeout} end)
     commands_by_id =
       Task.Supervisor.async_stream_nolink(Warzone.TaskSupervisor,
-      ships_by_id |> Map.to_list(),
-      fn {id, %Ship{} = ship} ->
-        {id, Ship.generate_commands(ship, base_ai)}
+      ships_by_id |> Map.values(),
+      fn %Ship{} = ship ->
+        Ship.generate_commands(ship, base_ai)
       end,
       ordered: false,
       timeout: 500,
       on_timeout: :kill_task)
-    |> Enum.to_list()
-    |> Enum.filter(fn response -> match?({:ok, _}, response) end)
-    |> Enum.map(fn {:ok, result} -> result end)
+    |> Enum.filter(fn task_response -> match?({:ok, _}, task_response) end)
+    |> Enum.map(fn {:ok, %CommandSet{id: id} = command_set} -> {id, command_set} end)
     |> Map.new()
 
     {:commands_by_id, commands_by_id}

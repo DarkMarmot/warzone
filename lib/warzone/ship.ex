@@ -1,7 +1,7 @@
 # to lua: ship (self), scan (ships, missiles, clock, range), clock
 
 defmodule Warzone.Ship do
-  alias Warzone.{Ship, Battle, Command, Missile}
+  alias Warzone.{Ship, Battle, Command, CommandSet, Missile}
 
   @deg_to_radians :math.pi() / 180.0
   @max_energy 100
@@ -30,18 +30,31 @@ defmodule Warzone.Ship do
             scanning_power: 0,
             thrust: [0, 0],
             view: nil,
-            ai_state: nil
+            ai_state: nil,
+            ai_error: nil
 
-  def generate_commands(%Ship{ai_state: nil}, base_ai) do
-    []
+  def generate_commands(%Ship{id: id, ai_state: nil}, _base_ai) do
+    %CommandSet{id: id, error: :no_ai}
   end
 
-  def generate_commands(%Ship{ai_state: {:ok, ai_chunk}, velocity: [vx, vy], position: [px, py], energy: energy, hull: hull} = ship, base_ai) do
-    base_ai
-    |> Sandbox.set!("status", %{velocity: %{x: vx, y: vy}, position: %{x: px, y: py}, energy: energy, hull: hull})
-    |> Sandbox.play!(ai_chunk)
-    |> Sandbox.get!("commands")
-    |> parse_lua_commands()
+  def generate_commands(%Ship{id: id, ai_state: {:error, _ai_reason}}, _base_ai) do
+    %CommandSet{id: id, error: :ai_could_not_compile}
+  end
+
+
+  def generate_commands(%Ship{id: id, ai_state: {:ok, ai_chunk}, velocity: [vx, vy], position: [px, py], energy: energy, hull: hull} = ship, base_ai) do
+
+    ai_play_result =
+      base_ai
+      |> Sandbox.set!("status", %{velocity: %{x: vx, y: vy}, position: %{x: px, y: py}, energy: energy, hull: hull})
+      |> Sandbox.play(ai_chunk)
+
+    case ai_play_result do
+      {:error, _reason} -> %CommandSet{id: id, error: :ai_runtime_error}
+      {:ok, lua_state} ->
+        commands = lua_state |> Sandbox.get!("commands") |> parse_lua_commands()
+        %CommandSet{id: id, commands: commands}
+    end
     |> IO.inspect()
   end
 
@@ -63,8 +76,8 @@ defmodule Warzone.Ship do
     |> recharge()
   end
 
-  def clear_commands(%Ship{} = ship) do
-    %Ship{ship | commands: [], thrust: [0, 0], scanning_power: 0, cloaking_power: 0}
+  def clear_commands(%Ship{} = ship, error) do
+    %Ship{ship | ai_error: error, commands: [], thrust: [0, 0], scanning_power: 0, cloaking_power: 0}
   end
 
   def perform_command(%Ship{energy: energy, commands: commands} = ship, %Command{name: name, power: power} = command) do
