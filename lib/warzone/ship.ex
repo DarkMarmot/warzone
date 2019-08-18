@@ -55,7 +55,7 @@ defmodule Warzone.Ship do
         commands = lua_state |> Sandbox.get!("commands") |> parse_lua_commands()
         %CommandSet{id: id, commands: commands}
     end
-    |> IO.inspect()
+
   end
 
   def parse_lua_commands(commands) do

@@ -234,6 +234,7 @@ missile_ids_by_spatial_hash: missile_ids_by_spatial_hash,
     |> Enum.map(fn {:ok, %CommandSet{id: id} = command_set} -> {id, command_set} end)
     |> Map.new()
 
+    IO.inspect("commands:\n#{inspect(commands_by_id)}")
     {:commands_by_id, commands_by_id}
 
   end
