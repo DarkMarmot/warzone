@@ -6,8 +6,8 @@ defmodule Warzone.Ship do
   @deg_to_radians :math.pi() / 180.0
   @max_energy 100
   @max_hull 100
-  @recharge_rate 1
-  @drag_coef 0.85
+  @recharge_rate 2 # is 10 per input
+  @drag_coef 0.9
   @missile_speed 30
 
   defstruct id: nil,
@@ -56,6 +56,7 @@ defmodule Warzone.Ship do
   end
 
   def update(%Ship{} = ship) do
+    IO.puts("energy: #{inspect(ship.energy)} velocity: #{inspect(trunc(ship.velocity |> Enum.at(0)))} position: #{inspect(trunc(ship.position |> Enum.at(0)))}")
     ship
     |> count()
     |> move()

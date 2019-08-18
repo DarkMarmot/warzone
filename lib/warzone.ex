@@ -15,4 +15,9 @@ defmodule Warzone do
   def hello do
     :world
   end
+
+  def test do
+    Warzone.BattleServer.join()
+    Warzone.BattleServer.submit_code("thrust({power=10})")
+  end
 end

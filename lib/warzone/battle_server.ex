@@ -74,7 +74,7 @@ defmodule Warzone.BattleServer do
   end
 
   def handle_info(:update, %Battle{} = battle) do
-    Process.send_after(self(), :update, 500)
+    Process.send_after(self(), :update, @physics_timestep)
     {:noreply, Battle.update(battle)}
   end
 
