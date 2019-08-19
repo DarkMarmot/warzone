@@ -5,6 +5,8 @@ defmodule Warzone.BattleServer do
 
   @physics_timestep 1000
   @input_timestep 5000
+  @compile_timestep 2000
+
   @updates_per_input @input_timestep / @physics_timestep
 
   def start_link(_) do
@@ -17,6 +19,7 @@ defmodule Warzone.BattleServer do
     base_ai = Sandbox.play_file!(Sandbox.init(), code_path)
     Process.send_after(self(), :update, @physics_timestep)
     Process.send_after(self(), :generate_commands, @input_timestep)
+    Process.send_after(self(), :compile_code, @compile_timestep)
     {:ok, %Battle{base_ai: base_ai}}
   end
 
@@ -54,6 +57,15 @@ defmodule Warzone.BattleServer do
     {:noreply, battle}
   end
 
+  def handle_info(:compile_code, %Battle{} = battle) do
+    Task.Supervisor.async_nolink(Warzone.TaskSupervisor, fn ->
+      Battle.compile_code(battle)
+    end)
+
+    Process.send_after(self(), :compile_code, @compile_timestep)
+    {:noreply, battle}
+  end
+
   def handle_cast({:join, player_pid}, %Battle{} = battle) do
     {:noreply, Battle.join(battle, player_pid)}
   end
@@ -63,11 +75,11 @@ defmodule Warzone.BattleServer do
   end
 
   def handle_cast({:submit_code, player_pid, code}, %Battle{} = battle) do
-    Task.Supervisor.async_nolink(Warzone.TaskSupervisor, fn ->
-      Battle.submit_code(battle, player_pid, code)
-    end)
+#    Task.Supervisor.async_nolink(Warzone.TaskSupervisor, fn ->
+#      Battle.submit_code(battle, player_pid, code)
+#    end)
 
-    {:noreply, battle}
+    {:noreply, Battle.submit_code(battle, player_pid, code)}
   end
 
   def handle_cast({:debug, player_pid}, %Battle{} = battle) do
@@ -86,11 +98,16 @@ defmodule Warzone.BattleServer do
     {:noreply, battle |> Battle.distribute_commands_to_ships(commands_by_id)}
   end
 
-  def handle_info({ref, {:submitted_code, id, code, ai_state}}, %Battle{} = battle)
+  def handle_info({ref, {:ai_states_by_id, ai_states_by_id}}, %Battle{} = battle)
       when is_reference(ref) do
     Process.demonitor(ref, [:flush])
-    {:noreply, battle |> Battle.update_code(id, code, ai_state)}
+    {:noreply, battle |> Battle.distribute_ai_states_to_ships(ai_states_by_id)}
   end
+#  def handle_info({ref, {:submitted_code, id, code, ai_state}}, %Battle{} = battle)
+#      when is_reference(ref) do
+#    Process.demonitor(ref, [:flush])
+#    {:noreply, battle |> Battle.update_code(id, code, ai_state)}
+#  end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, %Battle{} = battle) do
     IO.inspect("down!: #{inspect(pid)}")

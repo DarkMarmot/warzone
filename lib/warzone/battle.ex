@@ -6,11 +6,6 @@ defmodule Warzone.Battle do
   @ship_size 100
   @hash_size 1000
 
-  # cloak = -power * 500
-  # scan = power * 500 + 2000
-  # damage = power * 5, cost = (power + 1) * 5 -- speed 200, duration 25 ticks
-  # thrust = power, max speed = 100
-
   defstruct base_ai: nil,
             ships_by_id: %{},
             missiles_by_id: %{},
@@ -173,16 +168,6 @@ defmodule Warzone.Battle do
     %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
   end
 
-  #  def perform_commands(%Battle{ships_by_id: ships_by_id} = battle) do
-  #    map_fun = fn %Ship{} = ship ->
-  #      Ship.perform_commands(ship, battle) end
-  #    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
-  #  end
-
-  #  def clear_commands(%Battle{ships_by_id: ships_by_id} = battle) do
-  #    map_fun = fn %Ship{} = ship -> %Ship{ship | commands: []} end
-  #    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
-  #  end
 
   def spawn_ships_into_battle(%Battle{ships_by_id: ships_by_id} = battle) do
     map_fun = fn
@@ -225,6 +210,22 @@ defmodule Warzone.Battle do
     %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
   end
 
+
+  def distribute_ai_states_to_ships(%Battle{ships_by_id: ships_by_id} = battle, ai_states_by_id) do
+    #    IO.inspect("cid: #{inspect(commands_by_id)}")
+
+    ships_with_updated_ais =
+    ai_states_by_id
+    |> Map.to_list()
+    |> Enum.reduce(ships_by_id, fn {id, ai_state}, ships_by_id_acc ->
+      ship = Map.get(ships_by_id, id)
+      Map.put(ships_by_id_acc, id, %Ship{ship | ai_state: ai_state})
+    end)
+
+    %Battle{battle | ships_by_id: ships_with_updated_ais}
+  end
+
+
   def render_scanner_view(%Battle{} = battle, %Ship{} = ship) do
     ship
   end
@@ -266,14 +267,41 @@ defmodule Warzone.Battle do
     {:commands_by_id, all_commands_by_id}
   end
 
-  def submit_code(%Battle{base_ai: base_ai} = battle, id, code) do
-    chunk = Sandbox.chunk(base_ai, code)
-    {:submitted_code, id, code, chunk}
+
+  def compile_code(%Battle{base_ai: base_ai, ships_by_id: ships_by_id} = battle) do
+
+    ships_with_new_code =
+    ships_by_id
+    |> Map.values()
+    |> Enum.filter(fn %Ship{ai_state: ai_state, code: code} -> ai_state == nil && is_binary(code) end)
+
+    ai_states_by_id =
+      Task.Supervisor.async_stream_nolink(
+        Warzone.SandboxTaskSupervisor,
+        ships_with_new_code,
+        fn %Ship{id: id, code: code} = ship ->
+          chunk = Sandbox.chunk(base_ai, code)
+          {id, chunk}
+        end,
+        shutdown: 1000,
+        on_timeout: :kill_task,
+        ordered: false
+      )
+      |> Enum.filter(fn task_response -> match?({:ok, _}, task_response) end)
+      |> Enum.map(fn {:ok, result} -> result end)
+      |> Map.new()
+
+    {:ai_states_by_id, ai_states_by_id}
   end
 
-  def update_code(%Battle{} = battle, id, code, ai_state) do
-    ship = %Ship{get_ship(battle, id) | code: code, ai_state: ai_state}
-    IO.puts("update code: #{inspect(id)} ")
+#  def submit_code(%Battle{base_ai: base_ai} = battle, id, code) do
+#    chunk = Sandbox.chunk(base_ai, code)
+#    {:submitted_code, id, code, chunk}
+#  end
+
+  def submit_code(%Battle{} = battle, id, code) do
+    ship = %Ship{get_ship(battle, id) | code: code, ai_state: nil}
+#    IO.puts("update code: #{inspect(id)} ")
     battle |> put_ship(ship)
   end
 
