@@ -1,7 +1,7 @@
 
 view = {ships={}, missiles={}}
 commands = {}
-status = {hull=100, energy=100, position = {x=0, y=0}, velocity = {x=0, y=0}, stardate=0}
+status = {hull=100, energy=100, position = {x=0, y=0}, velocity = {x=0, y=0}, age=0}
 
 function face(angle)
     local cmd = {name="face", param=angle}

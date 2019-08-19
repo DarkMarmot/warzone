@@ -111,8 +111,9 @@ defmodule Warzone.Battle do
   def get_missile_ids_by_spatial_hash(%Battle{missiles_by_id: missiles_by_id}) do
     missiles_by_id
     |> Map.to_list()
-    |> Enum.flat_map(fn id, %Missile{position: position} ->
-      get_spatial_hashes(position, @missile_size) |> Enum.map(&{&1, id})
+    |> Enum.flat_map(fn {id, %Missile{position: position}} ->
+      hashes = get_spatial_hashes(position, @missile_size)
+      hashes |> Enum.map(fn hash -> {hash, id} end)
     end)
     |> Enum.group_by(fn {hash, _id} -> hash end, fn {_hash, id} -> id end)
   end

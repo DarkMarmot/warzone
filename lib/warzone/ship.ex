@@ -50,19 +50,23 @@ defmodule Warzone.Ship do
           velocity: [vx, vy],
           position: [px, py],
           energy: energy,
-          hull: hull
+          hull: hull,
+          age: age
         } = ship,
         base_ai
       ) do
+
     ai_play_result =
       base_ai
       |> Sandbox.set!("status", %{
         velocity: %{x: vx, y: vy},
         position: %{x: px, y: py},
         energy: energy,
-        hull: hull
+        hull: hull,
+        age: age
       })
       |> Sandbox.play(ai_chunk, 1_000_000)
+
 
     #      |> Sandbox.moo(ai_chunk)
 
@@ -93,11 +97,10 @@ defmodule Warzone.Ship do
         inspect(trunc(ship.velocity |> Enum.at(1)))
       } position: #{inspect(trunc(ship.position |> Enum.at(0)))}  #{
         inspect(trunc(ship.position |> Enum.at(1)))
-      }
-      "
+      } #{inspect(ship.age)}"
     )
 
-    IO.puts("send: #{inspect(id)}")
+#    IO.puts("send: #{inspect(id)} #{inspect(ship.age)}")
     Process.send(id, {:ship_status, ship}, [])
 
     ship
@@ -122,6 +125,7 @@ defmodule Warzone.Ship do
   end
 
   def count(%Ship{playing: true, age: age} = ship) do
+
     %Ship{ship | age: age + 1}
   end
 
