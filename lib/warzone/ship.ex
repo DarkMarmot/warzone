@@ -26,10 +26,13 @@ defmodule Warzone.Ship do
             hull: @max_hull,
             energy: @max_energy,
             velocity: [0, 0],
+            speed: 0,
             position: [0, 0],
             cloaking_power: 0,
             scanning_power: 0,
             thrust: [0, 0],
+            thrust_dir: 0,
+            thrust_mag: 0,
             facing: 0,
             view: nil,
             ai_state: nil,
@@ -47,11 +50,12 @@ defmodule Warzone.Ship do
         %Ship{
           id: id,
           ai_state: {:ok, ai_chunk},
-          velocity: [vx, vy],
+          speed: speed,
           position: [px, py],
           energy: energy,
           hull: hull,
-          age: age
+          age: age,
+          facing: facing
         } = ship,
         base_ai
       ) do
@@ -59,8 +63,10 @@ defmodule Warzone.Ship do
     ai_play_result =
       base_ai
       |> Sandbox.set!("status", %{
-        velocity: %{x: vx, y: vy},
-        position: %{x: px, y: py},
+        x: px,
+        y: py,
+        facing: facing,
+        speed: speed,
         energy: energy,
         hull: hull,
         age: age
@@ -136,7 +142,8 @@ defmodule Warzone.Ship do
   def move(%Ship{energy: energy, velocity: [vx, vy], position: [px, py], thrust: [tx, ty]} = ship) do
     new_vx = (vx + tx / 10) * @drag_coef
     new_vy = (vy + ty / 10) * @drag_coef
-    %Ship{ship | velocity: [new_vx, new_vy], position: [px + new_vx, py + new_vy]}
+    speed = :math.sqrt(new_vx * new_vx + new_vy * new_vy)
+    %Ship{ship | speed: speed, velocity: [new_vx, new_vy], position: [px + new_vx, py + new_vy]}
   end
 
   def recharge(%Ship{energy: energy} = ship) do
@@ -264,12 +271,17 @@ defmodule Warzone.Ship do
     %Ship{ship | facing: angle, commands: [command | commands]}
   end
 
+  def keep_angle_between_0_and_360(angle) do
+    angle -  :math.floor(angle/360) * 360
+  end
+
   def perform_command(
         %Ship{facing: facing, commands: commands} = ship,
         %Command{name: "turn", param: angle} = command
       )
       when is_number(angle) do
-    %Ship{ship | facing: facing + angle, commands: [command | commands]}
+
+    %Ship{ship | facing: keep_angle_between_0_and_360(facing), commands: [command | commands]}
   end
 
   def perform_command(
