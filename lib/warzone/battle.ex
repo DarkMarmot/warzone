@@ -64,7 +64,7 @@ defmodule Warzone.Battle do
   end
 
   def destroy_missiles(%Battle{missiles_by_id: missiles_by_id} = battle) do
-    filter_fun = fn %Missile{destroyed: destroyed} -> !destroyed end
+    filter_fun = fn %Missile{destroyed: destroyed, age: age} -> !destroyed end
     %Battle{battle | missiles_by_id: missiles_by_id |> MapEnum.filter(filter_fun)}
   end
 
