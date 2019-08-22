@@ -12,6 +12,7 @@ defmodule Warzone.Ship do
   @missile_speed 30
 
   defstruct id: nil,
+            display_id: nil,
             name: nil,
             code: nil,
             playing: false,
@@ -34,9 +35,17 @@ defmodule Warzone.Ship do
             thrust_dir: 0,
             thrust_mag: 0,
             facing: 0,
-            view: nil,
+            display: nil,
             ai_state: nil,
             ai_error: nil
+
+  def display(%Ship{display_id: display_id, position: position, facing: facing}) do
+    %{
+      display_id: display_id,
+      position: position,
+      facing: facing
+    }
+  end
 
   def generate_commands(%Ship{id: id, ai_state: nil}, _base_ai) do
     %CommandSet{id: id, error: :no_ai}
@@ -249,7 +258,8 @@ defmodule Warzone.Ship do
         owner_id: id,
         power: power - 2,
         velocity: [vx, vy],
-        position: position
+        position: position,
+        facing: facing
       }
 
       %Ship{
@@ -294,7 +304,7 @@ defmodule Warzone.Ship do
       %Ship{
         ship
         | energy: energy - power,
-          cloaking_power: power * 1000,
+          cloaking_power: power,
           commands: [command | commands]
       }
     else
@@ -311,7 +321,7 @@ defmodule Warzone.Ship do
       %Ship{
         ship
         | energy: energy - power,
-          scanning_power: power * 500 + 2000,
+          scanning_power: power,
           commands: [command | commands]
       }
     else

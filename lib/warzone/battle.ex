@@ -4,7 +4,7 @@ defmodule Warzone.Battle do
   @realm_size 10000
   @missile_size 0
   @ship_size 100
-  @hash_size 1000
+  @hash_size 200
 
   defstruct base_ai: nil,
             ships_by_id: %{},
@@ -16,8 +16,13 @@ defmodule Warzone.Battle do
             stardate: 0,
             id_counter: 0
 
-  def join(%Battle{ships_by_id: ships_by_id} = battle, id) do
-    put_ship(battle, %Ship{id: id, position: get_spawn_position()})
+  def advance_counter(%Battle{id_counter: id_counter} = battle) do
+    %Battle{battle| id_counter: id_counter + 1}
+  end
+
+  def join(%Battle{ships_by_id: ships_by_id, id_counter: id_counter} = battle, id) do
+    put_ship(battle, %Ship{id: id, display_id: "ship_" <> to_string(id_counter), position: get_spawn_position()})
+    |> advance_counter()
   end
 
   def leave(%Battle{ships_by_id: ships_by_id} = battle, id) do
@@ -227,12 +232,28 @@ defmodule Warzone.Battle do
   end
 
 
-  def render_scanner_view(%Battle{} = battle, %Ship{} = ship) do
-    ship
+  def render_scanner(%Battle{missile_ids_by_spatial_hash: missile_ids_by_spatial_hash, ship_ids_by_spatial_hash: ship_ids_by_spatial_hash} = battle, %Ship{position: position, scanning_power: scanning_power} = ship) do
+
+    scanning_hashes = get_spatial_hashes(position, scanning_power * 500)
+
+    ships =
+    scanning_hashes
+    |> Enum.flat_map(fn spatial_hash -> Map.get(ship_ids_by_spatial_hash, spatial_hash, []) end)
+    |> Enum.uniq()
+    |> Enum.map(fn id -> Ship.display(get_ship(battle, id)) end)
+
+    missiles =
+      scanning_hashes
+      |> Enum.flat_map(fn spatial_hash -> Map.get(missile_ids_by_spatial_hash, spatial_hash, []) end)
+      |> Enum.uniq()
+      |> Enum.map(fn id -> Missile.display(get_missile(battle, id)) end)
+
+    %Ship{ship | display: %{missiles: missiles, ships: ships}}
+
   end
 
-  def render_scanner_views(%Battle{ships_by_id: ships_by_id} = battle) do
-    map_fun = fn %Ship{} = ship -> Battle.render_scanner_view(battle, ship) end
+  def render_scanners(%Battle{ships_by_id: ships_by_id} = battle) do
+    map_fun = fn %Ship{} = ship -> Battle.render_scanner(battle, ship) end
     %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
   end
 
@@ -332,7 +353,7 @@ defmodule Warzone.Battle do
         %Missile{} = missile
       ) do
     battle
-    |> put_missile(%Missile{missile | id: id_counter})
-    |> Map.put(:id_counter, id_counter + 1)
+    |> put_missile(%Missile{missile | id: id_counter, display_id: "missile_" <> to_string(id_counter)})
+    |> advance_counter()
   end
 end
