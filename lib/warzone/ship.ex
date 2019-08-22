@@ -9,7 +9,7 @@ defmodule Warzone.Ship do
   # is 10 per input
   @recharge_rate 2
   @drag_coef 0.9
-  @missile_speed 30
+  @missile_speed 10
 
   defstruct id: nil,
             display_id: nil,
@@ -151,8 +151,8 @@ defmodule Warzone.Ship do
   end
 
   def move(%Ship{energy: energy, velocity: [vx, vy], position: [px, py], thrust: [tx, ty]} = ship) do
-    new_vx = (vx + tx / 10) * @drag_coef
-    new_vy = (vy + ty / 10) * @drag_coef
+    new_vx = (vx + tx / 50) * @drag_coef
+    new_vy = (vy + ty / 50) * @drag_coef
     speed = :math.sqrt(new_vx * new_vx + new_vy * new_vy)
     %Ship{ship | speed: speed, velocity: [new_vx, new_vy], position: [px + new_vx, py + new_vy]}
   end

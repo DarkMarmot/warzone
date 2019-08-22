@@ -7,6 +7,7 @@ defmodule Warzone.BattleServer do
   @input_timestep 2000
   @compile_timestep 2000
 
+
   @updates_per_input @input_timestep / @physics_timestep
 
   def start_link(_) do

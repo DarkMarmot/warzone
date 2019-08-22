@@ -3,8 +3,8 @@ defmodule Warzone.Battle do
 
   @realm_size 10000
   @missile_size 0
-  @ship_size 100
-  @hash_size 200
+  @ship_size 20
+  @hash_size 100
 
   defstruct base_ai: nil,
             ships_by_id: %{},
