@@ -35,7 +35,7 @@ defmodule Warzone.Ship do
             thrust_dir: 0,
             thrust_mag: 0,
             facing: 0,
-            display: nil,
+            display: %{ships: [], missiles: []},
             ai_state: nil,
             ai_error: nil
 
