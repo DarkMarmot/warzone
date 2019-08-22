@@ -256,7 +256,8 @@ defmodule Warzone.Ship do
         ship
         | energy: energy - power,
           missiles_ready: [missile | missiles_ready],
-          commands: [command | commands]
+          commands: [command | commands],
+          missile_counter: missile_counter + 1
       }
     else
       ship |> Ship.not_enough_energy(command)
