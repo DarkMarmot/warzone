@@ -64,7 +64,8 @@ defmodule Warzone.Ship do
           energy: energy,
           hull: hull,
           age: age,
-          facing: facing
+          facing: facing,
+          display: display
         } = ship,
         base_ai
       ) do
@@ -78,7 +79,8 @@ defmodule Warzone.Ship do
         speed: speed,
         energy: energy,
         hull: hull,
-        age: age
+        age: age,
+        view: display
       })
       |> Sandbox.play(ai_chunk, 1_000_000)
 
@@ -107,13 +109,13 @@ defmodule Warzone.Ship do
   end
 
   def update(%Ship{id: id} = ship) do
-    IO.puts(
-      "energy: #{inspect(ship.energy)} velocity: #{inspect(trunc(ship.velocity |> Enum.at(0)))} #{
-        inspect(trunc(ship.velocity |> Enum.at(1)))
-      } position: #{inspect(trunc(ship.position |> Enum.at(0)))}  #{
-        inspect(trunc(ship.position |> Enum.at(1)))
-      } #{inspect(ship.age)}"
-    )
+#    IO.puts(
+#      "energy: #{inspect(ship.energy)} velocity: #{inspect(trunc(ship.velocity |> Enum.at(0)))} #{
+#        inspect(trunc(ship.velocity |> Enum.at(1)))
+#      } position: #{inspect(trunc(ship.position |> Enum.at(0)))}  #{
+#        inspect(trunc(ship.position |> Enum.at(1)))
+#      } #{inspect(ship.age)}"
+#    )
 
 #    IO.puts("send: #{inspect(id)} #{inspect(ship.age)}")
     Process.send(id, {:ship_status, ship}, [])

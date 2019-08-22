@@ -49,7 +49,7 @@ defmodule Warzone.Battle do
     |> generate_spatial_hashes()
     |> determine_collisions()
     |> resolve_collisions()
-    |> render_scanner_views()
+    |> render_scanners()
 
     #    |> helm_ships()
     #   |> asteroid_damage() for things beyond bounds
