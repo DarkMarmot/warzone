@@ -344,16 +344,16 @@ defmodule Warzone.Battle do
     %Battle{battle | ships_by_id: Map.put(ships_by_id, id, ship)}
   end
 
-  def put_missile(%Battle{missiles_by_id: missiles_by_id} = battle, %Missile{id: id} = missile) do
-    %Battle{battle | missiles_by_id: Map.put(missiles_by_id, id, missile)}
-  end
-
-  def add_missile(
-        %Battle{missiles_by_id: missiles_by_id, id_counter: id_counter} = battle,
-        %Missile{} = missile
-      ) do
-    battle
-    |> put_missile(%Missile{missile | id: id_counter, display_id: "missile_" <> to_string(id_counter)})
-    |> advance_counter()
-  end
+#  def put_missile(%Battle{missiles_by_id: missiles_by_id} = battle, %Missile{id: id} = missile) do
+#    %Battle{battle | missiles_by_id: Map.put(missiles_by_id, id, missile)}
+#  end
+#
+#  def add_missile(
+#        %Battle{missiles_by_id: missiles_by_id, id_counter: id_counter} = battle,
+#        %Missile{} = missile
+#      ) do
+#    battle
+#    |> put_missile(%Missile{missile | id: id_counter, display_id: "missile_" <> to_string(id_counter)})
+#    |> advance_counter()
+#  end
 end

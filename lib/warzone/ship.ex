@@ -245,7 +245,8 @@ defmodule Warzone.Ship do
           energy: energy,
           commands: commands,
           missiles_ready: missiles_ready,
-          missile_counter: missile_counter
+          missile_counter: missile_counter,
+          display_id: display_id
         } = ship,
         %Command{name: "fire", param: power} = command
       )
@@ -257,6 +258,7 @@ defmodule Warzone.Ship do
 
       missile = %Missile{
         id: {id, missile_counter},
+        display_id: to_string(display_id) <> "_" <> to_string(missile_counter),
         owner_id: id,
         power: power - 2,
         velocity: [vx, vy],
