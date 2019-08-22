@@ -234,7 +234,7 @@ defmodule Warzone.Battle do
 
   def render_scanner(%Battle{missile_ids_by_spatial_hash: missile_ids_by_spatial_hash, ship_ids_by_spatial_hash: ship_ids_by_spatial_hash} = battle, %Ship{position: position, scanning_power: scanning_power} = ship) do
 
-    scanning_hashes = get_spatial_hashes(position, scanning_power * 500)
+    scanning_hashes = get_spatial_hashes(position, scanning_power * 500 + 1000)
 
     ships =
     scanning_hashes
