@@ -3,8 +3,8 @@ defmodule Warzone.BattleServer do
 
   use GenServer
 
-  @physics_timestep 400
-  @input_timestep 2000
+  @physics_timestep 500
+  @input_timestep 2500
   @compile_timestep 2000
 
 

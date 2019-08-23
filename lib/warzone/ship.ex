@@ -9,7 +9,7 @@ defmodule Warzone.Ship do
   # is 10 per input
   @recharge_rate 2
   @drag_coef 0.9
-  @missile_speed 4
+  @missile_speed 2
 
   defstruct id: nil,
             display_id: nil,
