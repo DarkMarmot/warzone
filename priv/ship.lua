@@ -33,13 +33,13 @@ function scan(power)
     table.insert(commands, cmd)
 end
 
-function target_nearest()
+function nearest_ship()
     local best_distance = 10000
-    local best_direction = 0
+    local nearest = nil
     for _,v in pairs(view.ships) do
         if v.distance < best_distance then
-            best_direction = v.direction
+            nearest = v
         end
     end
-    return best_direction
+    return nearest
 end
