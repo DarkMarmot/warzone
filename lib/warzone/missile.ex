@@ -12,7 +12,7 @@ defmodule Warzone.Missile do
 
   def display(%Missile{display_id: display_id, position: [x, y], facing: facing, power: power}, [ship_x, ship_y]) do
     %{
-      display_id: display_id,
+      name: display_id,
       x: x - ship_x,
       y: y - ship_y,
       facing: facing,
