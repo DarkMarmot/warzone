@@ -10,6 +10,7 @@ defmodule Warzone.Ship do
   @recharge_rate 2
   @drag_coef 0.9
   @missile_speed 5
+  @default_scanning_range 300
   @power_to_speed_factor 0.2
   @power_to_cloaking_factor 1
   @power_to_scanning_factor 1
@@ -34,7 +35,7 @@ defmodule Warzone.Ship do
             speed: 0,
             position: [0, 0],
             cloaking_power: 0,
-            scanning_power: 300,
+            scanning_power: @default_scanning_range,
             heading: 0,
             facing: 0,
             display: %{ships: [], missiles: []},
@@ -144,7 +145,7 @@ defmodule Warzone.Ship do
         commands: [],
         velocity: [0, 0],
         speed: 0,
-        scanning_power: 0,
+        scanning_power: @default_scanning_range,
         cloaking_power: 0
     }
   end
@@ -288,7 +289,7 @@ defmodule Warzone.Ship do
       %Ship{
         ship
         | energy: energy - power,
-          scanning_power: power * 100 + 300,
+          scanning_power: power * 100 + @default_scanning_range,
           commands: [command | commands]
       }
     else
