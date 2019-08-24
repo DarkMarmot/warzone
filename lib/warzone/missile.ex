@@ -10,10 +10,11 @@ defmodule Warzone.Missile do
             owner_id: nil,
             destroyed: false
 
-  def display(%Missile{display_id: display_id, position: position, facing: facing}) do
+  def display(%Missile{display_id: display_id, position: [x, y], facing: facing}, [ship_x, ship_y]) do
     %{
       display_id: display_id,
-      position: position,
+      x: x - ship_x,
+      y: y - ship_y,
       facing: facing
     }
   end

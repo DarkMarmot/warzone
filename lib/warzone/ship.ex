@@ -41,10 +41,11 @@ defmodule Warzone.Ship do
             ai_state: nil,
             ai_error: nil
 
-  def display(%Ship{display_id: display_id, position: position, facing: facing}) do
+  def display(%Ship{display_id: display_id, position: [x, y], facing: facing}, [ship_x, ship_y]) do
     %{
       display_id: display_id,
-      position: position,
+      x: x - ship_x,
+      y: y - ship_y,
       facing: facing
     }
   end

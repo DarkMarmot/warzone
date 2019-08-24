@@ -240,13 +240,13 @@ defmodule Warzone.Battle do
     scanning_hashes
     |> Enum.flat_map(fn spatial_hash -> Map.get(ship_ids_by_spatial_hash, spatial_hash, []) end)
     |> Enum.uniq()
-    |> Enum.map(fn id -> Ship.display(get_ship(battle, id)) end)
+    |> Enum.map(fn id -> Ship.display(get_ship(battle, id), position) end)
 
     missiles =
       scanning_hashes
       |> Enum.flat_map(fn spatial_hash -> Map.get(missile_ids_by_spatial_hash, spatial_hash, []) end)
       |> Enum.uniq()
-      |> Enum.map(fn id -> Missile.display(get_missile(battle, id)) end)
+      |> Enum.map(fn id -> Missile.display(get_missile(battle, id), position) end)
 
     %Ship{ship | display: %{missiles: missiles, ships: ships}}
 
