@@ -10,6 +10,10 @@ defmodule Warzone.Ship do
   @recharge_rate 2
   @drag_coef 0.9
   @missile_speed 5
+  @power_to_speed_factor 0.01
+  @power_to_cloaking_factor 1
+  @power_to_scanning_factor 1
+
 
   defstruct id: nil,
             display_id: nil,
@@ -31,9 +35,7 @@ defmodule Warzone.Ship do
             position: [0, 0],
             cloaking_power: 0,
             scanning_power: 0,
-            thrust: [0, 0],
-            thrust_dir: 0,
-            thrust_mag: 0,
+            heading: 0,
             facing: 0,
             display: %{ships: [], missiles: []},
             ai_state: nil,
@@ -131,7 +133,8 @@ defmodule Warzone.Ship do
       ship
       | ai_error: error,
         commands: [],
-        thrust: [0, 0],
+        velocity: [0, 0],
+        speed: 0,
         scanning_power: 0,
         cloaking_power: 0
     }
@@ -150,86 +153,37 @@ defmodule Warzone.Ship do
     %Ship{ship | spawn_counter: spawn_counter - 1}
   end
 
-  def move(%Ship{energy: energy, velocity: [vx, vy], position: [px, py], thrust: [tx, ty]} = ship) do
-    new_vx = (vx + tx / 50) * @drag_coef
-    new_vy = (vy + ty / 50) * @drag_coef
-    speed = :math.sqrt(new_vx * new_vx + new_vy * new_vy)
-    %Ship{ship | speed: speed, velocity: [new_vx, new_vy], position: [px + new_vx, py + new_vy]}
+  def move(%Ship{energy: energy, velocity: [vx, vy], position: [px, py]} = ship) do
+    %Ship{ship | position: [px + vx, py + vy]}
   end
 
   def recharge(%Ship{energy: energy} = ship) do
     %Ship{ship | energy: min(energy + @recharge_rate, @max_energy)}
   end
 
-  # commands
-
-  #  def thrust(%Ship{velocity: [vx, vy], thrust: [tx, ty], energy: energy, commands: commands} = ship, %Command{name: "thrust", power: power, angle: angle} = command) do
-  #    # multiple small thrusts can be added together in one command set
-  #    if power <= energy do
-  #      radians = @deg_to_radians * angle
-  #      new_tx = tx + :math.cos(radians) * power
-  #      new_ty = ty + :math.sin(radians) * power
-  #      %Ship{ship | energy: energy - power, thrust: [new_tx, new_ty], commands: [command | commands]}
-  #    else
-  #      ship |> Ship.not_enough_energy(command)
-  #    end
-  #  end
-  #
-  #  def face(%Ship{commands: commands} = ship, %Command{name: "face", power: power} = command) do
-  #    if power <= energy do
-  #      %Ship{ship | energy: energy - power, scanning_power: power * 500 + 2000, commands: [command | commands]}
-  #    else
-  #      ship |> Ship.not_enough_energy(command)
-  #    end
-  #  end
-  #
-  #  def scan(%Ship{energy: energy, commands: commands} = ship, %Command{name: "scan", power: power} = command) do
-  #    if power <= energy do
-  #      %Ship{ship | energy: energy - power, scanning_power: power * 500 + 2000, commands: [command | commands]}
-  #    else
-  #      ship |> Ship.not_enough_energy(command)
-  #    end
-  #  end
-  #
-  #  def cloak(%Ship{energy: energy, commands: commands} = ship, %Command{name: "cloak", power: power} = command) do
-  #    if power <= energy do
-  #      %Ship{ship | energy: energy - power, cloaking_power: power * 500, commands: [command | commands]}
-  #    else
-  #      ship |> Ship.not_enough_energy(command)
-  #    end
-  #  end
-  #
-  #  def fire(%Ship{id: id, energy: energy, commands: commands, missile_counter: missile_counter, missiles_ready: missiles_ready, position: position} = ship, %Command{name: "fire", power: power, angle: angle} = command) do
-  #    if (power > 2 && power <= energy) do
-  #      radians = @deg_to_radians * angle
-  #      vx = :math.cos(radians) * @missile_speed
-  #      vy = :math.sin(radians) * @missile_speed
-  #      missile = %Missile{id: {id, missile_counter}, owner_id: id, power: power - 2, velocity: [vx, vy], position: position}
-  #      %Ship{ship |energy: energy - power,  missiles_ready: [missile | missiles_ready], commands: [command | commands]}
-  #    else
-  #      ship |> Ship.not_enough_energy(command)
-  #    end
-  #  end
 
   def perform_command(
         %Ship{
           facing: facing,
           energy: energy,
-          commands: commands,
-          thrust: [tx, ty]
+          commands: commands
         } = ship,
         %Command{name: "thrust", param: power} = command
       )
       when is_number(power) do
     if power <= energy do
+
+      speed = @power_to_speed_factor * power
       radians = @deg_to_radians * facing
-      new_tx = tx + :math.cos(radians) * power
-      new_ty = ty + :math.sin(radians) * power
+      tx = :math.cos(radians) * speed
+      ty = :math.sin(radians) * speed
 
       %Ship{
         ship
         | energy: energy - power,
-          thrust: [new_tx, new_ty],
+          velocity: [tx, ty],
+          speed: speed,
+          heading: facing,
           commands: [command | commands]
       }
     else
