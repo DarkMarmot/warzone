@@ -175,7 +175,7 @@ defmodule Warzone.Ship do
       speed = @power_to_speed_factor * power
       radians = @deg_to_radians * facing
       tx = :math.cos(radians) * speed
-      ty = :math.sin(radians) * speed
+      ty = :math.sin(radians) * speed * -1
 
       %Ship{
         ship
@@ -207,7 +207,7 @@ defmodule Warzone.Ship do
     if power > 0 && power <= energy do
       radians = @deg_to_radians * facing
       vx = :math.cos(radians) * @missile_speed
-      vy = :math.sin(radians) * @missile_speed
+      vy = :math.sin(radians) * @missile_speed * -1
 
       missile = %Missile{
         id: {id, missile_counter},
