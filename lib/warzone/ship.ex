@@ -41,6 +41,14 @@ defmodule Warzone.Ship do
             ai_state: nil,
             ai_error: nil
 
+  def can_see(%Ship{position: p1, scanning_power: scanning_power} , %Ship{position: p2, cloaking_power: cloaking_power}) do
+    Battle.distance(p1, p2) - scanning_power + cloaking_power < 0
+  end
+
+  def can_see(%Ship{position: p1, scanning_power: scanning_power} = ship, %Missile{position: p2}) do
+    Battle.distance(p1, p2) - scanning_power < 0
+  end
+
   def display(%Ship{display_id: display_id, position: [x, y], facing: facing}, [ship_x, ship_y]) do
     %{
       display_id: display_id,
@@ -263,7 +271,7 @@ defmodule Warzone.Ship do
       %Ship{
         ship
         | energy: energy - power,
-          cloaking_power: power,
+          cloaking_power: power * 200,
           commands: [command | commands]
       }
     else
@@ -280,7 +288,7 @@ defmodule Warzone.Ship do
       %Ship{
         ship
         | energy: energy - power,
-          scanning_power: power,
+          scanning_power: power * 100 + 300,
           commands: [command | commands]
       }
     else
