@@ -37,7 +37,9 @@ function nearest_ship()
     local best_distance = 10000
     local nearest = nil
     for _,v in pairs(view.ships) do
+        print(v.distance)
         if v.distance < best_distance then
+            best_distance = v.distance
             nearest = v
         end
     end
