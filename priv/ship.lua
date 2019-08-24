@@ -32,3 +32,14 @@ function scan(power)
     local cmd = {name="scan", param=power}
     table.insert(commands, cmd)
 end
+
+function target_nearest()
+    local best_distance = 10000
+    local best_direction = 0
+    for _,v in pairs(view.ships) do
+        if v.distance < best_distance then
+            best_direction = v.direction
+        end
+    end
+    return best_direction
+end
