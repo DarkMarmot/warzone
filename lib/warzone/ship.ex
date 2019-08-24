@@ -93,6 +93,7 @@ defmodule Warzone.Ship do
         age: age,
         view: display
       })
+      |> Sandbox.play_function!(["math", "randomseed"], age)
       |> Sandbox.play(ai_chunk, 1_000_000)
 
 
