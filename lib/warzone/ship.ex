@@ -251,7 +251,7 @@ defmodule Warzone.Ship do
       )
       when is_number(angle) do
 
-    %Ship{ship | facing: keep_angle_between_0_and_360(facing - angle), commands: [command | commands]}
+    %Ship{ship | facing: keep_angle_between_0_and_360(facing + angle), commands: [command | commands]}
   end
 
   def perform_command(
