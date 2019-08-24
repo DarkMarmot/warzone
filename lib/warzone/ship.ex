@@ -10,7 +10,7 @@ defmodule Warzone.Ship do
   @recharge_rate 2
   @drag_coef 0.9
   @missile_speed 5
-  @power_to_speed_factor 0.01
+  @power_to_speed_factor 0.2
   @power_to_cloaking_factor 1
   @power_to_scanning_factor 1
 
@@ -250,7 +250,7 @@ defmodule Warzone.Ship do
       )
       when is_number(angle) do
 
-    %Ship{ship | facing: keep_angle_between_0_and_360(facing + angle), commands: [command | commands]}
+    %Ship{ship | facing: keep_angle_between_0_and_360(facing - angle), commands: [command | commands]}
   end
 
   def perform_command(
