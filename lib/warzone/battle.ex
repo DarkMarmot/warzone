@@ -285,11 +285,11 @@ defmodule Warzone.Battle do
       |> Enum.map(fn {:ok, %CommandSet{id: id} = command_set} -> {id, command_set} end)
       |> Map.new()
 
-    IO.inspect(Task.Supervisor.children(Warzone.SandboxTaskSupervisor))
+#    IO.inspect(Task.Supervisor.children(Warzone.SandboxTaskSupervisor))
 
     all_commands_by_id = Map.merge(default_failures, commands_by_id)
 
-    IO.inspect("commands:\n#{inspect(all_commands_by_id)}")
+#    IO.inspect("commands:\n#{inspect(all_commands_by_id)}")
     {:commands_by_id, all_commands_by_id}
   end
 

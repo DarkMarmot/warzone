@@ -45,7 +45,7 @@ defmodule Warzone.BattleServer do
   end
 
   def handle_info({:receive_commands, commands_by_id}, %Battle{} = battle) do
-    IO.inspect("got commands #{inspect(commands_by_id)}")
+#    IO.inspect("got commands #{inspect(commands_by_id)}")
     {:noreply, %Battle{battle | commands_by_id: commands_by_id}}
   end
 

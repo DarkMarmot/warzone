@@ -14,12 +14,12 @@ defmodule Warzone.Cache do
 
   @impl true
   def init(state) do
-    IO.puts("init!")
+#    IO.puts("init!")
     :ets.new(Warzone.Cache, [:set, :protected, :named_table, read_concurrency: true])
     file = "ship.lua"
     code_path = Path.join(:code.priv_dir(:warzone), file)
     ship_state = Sandbox.play_file!(Sandbox.init(), code_path)
-    IO.inspect(ship_state)
+#    IO.inspect(ship_state)
     {:ok, state}
   end
 end
