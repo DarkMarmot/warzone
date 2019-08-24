@@ -34,7 +34,7 @@ defmodule Warzone.Ship do
             speed: 0,
             position: [0, 0],
             cloaking_power: 0,
-            scanning_power: 0,
+            scanning_power: 300,
             heading: 0,
             facing: 0,
             display: %{ships: [], missiles: []},
