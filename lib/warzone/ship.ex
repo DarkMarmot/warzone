@@ -8,8 +8,7 @@ defmodule Warzone.Ship do
   @max_hull 100
   # is 10 per input
   @recharge_rate 2
-  @drag_coef 0.9
-  @missile_speed 5
+  @missile_speed 6
   @default_scanning_range 300
   @power_to_speed_factor 0.2
   @power_to_cloaking_factor 1
@@ -121,15 +120,7 @@ defmodule Warzone.Ship do
   end
 
   def update(%Ship{id: id} = ship) do
-#    IO.puts(
-#      "energy: #{inspect(ship.energy)} velocity: #{inspect(trunc(ship.velocity |> Enum.at(0)))} #{
-#        inspect(trunc(ship.velocity |> Enum.at(1)))
-#      } position: #{inspect(trunc(ship.position |> Enum.at(0)))}  #{
-#        inspect(trunc(ship.position |> Enum.at(1)))
-#      } #{inspect(ship.age)}"
-#    )
 
-#    IO.puts("send: #{inspect(id)} #{inspect(ship.age)}")
     Process.send(id, {:ship_status, ship}, [])
 
     ship
@@ -155,7 +146,6 @@ defmodule Warzone.Ship do
   end
 
   def count(%Ship{playing: true, age: age} = ship) do
-
     %Ship{ship | age: age + 1}
   end
 
@@ -171,7 +161,6 @@ defmodule Warzone.Ship do
     %Ship{ship | energy: min(energy + @recharge_rate, @max_energy)}
   end
 
-
   def perform_command(
         %Ship{
           facing: facing,
@@ -181,7 +170,7 @@ defmodule Warzone.Ship do
         %Command{name: "thrust", param: power} = command
       )
       when is_number(power) do
-    if power <= energy do
+    if power > 0 && power <= energy do
 
       speed = @power_to_speed_factor * power
       radians = @deg_to_radians * facing
@@ -215,7 +204,7 @@ defmodule Warzone.Ship do
         %Command{name: "fire", param: power} = command
       )
       when is_number(power) do
-    if power > 2 && power <= energy do
+    if power > 0 && power <= energy do
       radians = @deg_to_radians * facing
       vx = :math.cos(radians) * @missile_speed
       vy = :math.sin(radians) * @missile_speed
@@ -224,7 +213,7 @@ defmodule Warzone.Ship do
         id: {id, missile_counter},
         display_id: to_string(display_id) <> "_" <> to_string(missile_counter),
         owner_id: id,
-        power: power - 2,
+        power: power,
         velocity: [vx, vy],
         position: position,
         facing: facing
@@ -268,7 +257,7 @@ defmodule Warzone.Ship do
         %Command{name: "cloak", param: power} = command
       )
       when is_number(power) do
-    if power <= energy do
+    if power > 0 && power <= energy do
       %Ship{
         ship
         | energy: energy - power,
@@ -285,7 +274,7 @@ defmodule Warzone.Ship do
         %Command{name: "scan", param: power} = command
       )
       when is_number(power) do
-    if power <= energy do
+    if power > 0 &&  power <= energy do
       %Ship{
         ship
         | energy: energy - power,
