@@ -49,12 +49,13 @@ defmodule Warzone.Ship do
     Battle.distance(p1, p2) - scanning_power < 0
   end
 
-  def display(%Ship{display_id: display_id, position: [x, y], facing: facing}, [ship_x, ship_y]) do
+  def display(%Ship{display_id: display_id, position: [x, y]}, [ship_x, ship_y]) do
     %{
-      display_id: display_id,
+      name: display_id,
       x: x - ship_x,
       y: y - ship_y,
-      facing: facing
+      direction: :math.atan2(y, x),
+      distance: :math.sqrt(x * x + y * y)
     }
   end
 
@@ -93,7 +94,7 @@ defmodule Warzone.Ship do
         age: age,
         view: display
       })
-      |> Sandbox.play_function!(["math", "randomseed"], age)
+      |> Sandbox.play_function!(["math", "randomseed"], age, 1_000_000)
       |> Sandbox.play(ai_chunk, 1_000_000)
 
 
