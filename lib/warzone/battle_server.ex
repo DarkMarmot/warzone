@@ -29,6 +29,11 @@ defmodule Warzone.BattleServer do
     GenServer.cast(__MODULE__, {:join, player_pid})
   end
 
+  def leave() do
+    player_pid = self()
+    GenServer.cast(__MODULE__, {:leave, player_pid})
+  end
+
   def submit_name(name) do
     player_pid = self()
     GenServer.cast(__MODULE__, {:submit_name, player_pid, name})
@@ -69,6 +74,10 @@ defmodule Warzone.BattleServer do
 
   def handle_cast({:join, player_pid}, %Battle{} = battle) do
     {:noreply, Battle.join(battle, player_pid)}
+  end
+
+  def handle_cast({:leave, player_pid}, %Battle{} = battle) do
+    {:noreply, Battle.leave(battle, player_pid)}
   end
 
   def handle_cast({:submit_name, player_pid, name}, %Battle{} = battle) do
