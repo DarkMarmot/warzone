@@ -85,7 +85,7 @@ defmodule Warzone.Ship do
         base_ai
       ) do
 
-    IO.inspect("ships #{inspect(display.ships)}")
+
     ai_play_result =
       base_ai
       |> Sandbox.set!("status", %{
