@@ -50,12 +50,14 @@ defmodule Warzone.Ship do
   end
 
   def display(%Ship{display_id: display_id, position: [x, y]}, [ship_x, ship_y]) do
+    dx = x - ship_x
+    dy = y - ship_y
     %{
       name: display_id,
       x: x - ship_x,
       y: y - ship_y,
-      direction: :math.atan2(y, x),
-      distance: :math.sqrt(x * x + y * y)
+      direction: :math.atan2(dy, dx),
+      distance: :math.sqrt(dx * dx + dy * dy)
     }
   end
 
