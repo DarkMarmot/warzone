@@ -4,6 +4,7 @@ defmodule Warzone.Ship do
   alias Warzone.{Ship, Battle, Command, CommandSet, Missile}
 
   @deg_to_radians :math.pi() / 180.0
+  @radians_to_deg 1.0 / @deg_to_radians
   @max_energy 100
   @max_hull 100
   # is 10 per input
@@ -56,7 +57,7 @@ defmodule Warzone.Ship do
       name: display_id,
       x: dx,
       y: dy,
-      direction: :math.atan2(dy, dx),
+      direction: :math.atan2(dy, dx) * @radians_to_deg,
       distance: :math.sqrt(dx * dx + dy * dy)
     }
   end
