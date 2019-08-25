@@ -241,7 +241,7 @@ defmodule Warzone.Battle do
     |> Enum.flat_map(fn spatial_hash -> Map.get(ship_ids_by_spatial_hash, spatial_hash, []) end)
     |> Enum.uniq()
     |> Enum.map(fn id -> get_ship(battle, id) end)
-    |> Enum.filter(fn %Ship{} = target_ship -> Ship.can_see(ship, target_ship) end)
+    |> Enum.filter(fn %Ship{} = target_ship -> ship != target_ship && Ship.can_see(ship, target_ship) end)
     |> Enum.map(fn ship -> Ship.display(ship, position) end)
 
     missiles =
