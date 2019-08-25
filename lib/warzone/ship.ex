@@ -57,7 +57,7 @@ defmodule Warzone.Ship do
       name: display_id,
       x: dx,
       y: dy,
-      direction: :math.atan2(dy, dx) * @radians_to_deg,
+      direction: :math.atan2(dy, dx) * @radians_to_deg |> keep_angle_between_0_and_360(),
       distance: :math.sqrt(dx * dx + dy * dy)
     }
   end
