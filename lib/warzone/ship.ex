@@ -54,8 +54,8 @@ defmodule Warzone.Ship do
     dy = y - ship_y
     %{
       name: display_id,
-      x: x - ship_x,
-      y: y - ship_y,
+      x: dx,
+      y: dy,
       direction: :math.atan2(dy, dx),
       distance: :math.sqrt(dx * dx + dy * dy)
     }
@@ -84,6 +84,7 @@ defmodule Warzone.Ship do
         base_ai
       ) do
 
+    IO.inspect("ships #{inspect(display.ships)}")
     ai_play_result =
       base_ai
       |> Sandbox.set!("status", %{
