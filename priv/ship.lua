@@ -1,7 +1,6 @@
 
-view = {ships={}, missiles={}}
 commands = {}
-status = {hull=100, energy=100, position = {x=0, y=0}, velocity = {x=0, y=0}, age=0}
+status = {hull=100, energy=100, position = {x=0, y=0}, velocity = {x=0, y=0}, age=0, ships={}, missiles={}}
 
 function face(angle)
     local cmd = {name="face", param=angle}
@@ -36,11 +35,10 @@ end
 function nearest_ship()
     local best_distance = 10000
     local nearest = nil
-    for _,v in pairs(view.ships) do
-        print(v.distance)
-        if v.distance < best_distance then
-            best_distance = v.distance
-            nearest = v
+    for _,ship in pairs(status.ships) do
+        if ship.distance < best_distance then
+            best_distance = ship.distance
+            nearest = ship
         end
     end
     return nearest

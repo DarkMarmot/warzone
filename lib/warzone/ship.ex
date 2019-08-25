@@ -94,7 +94,8 @@ defmodule Warzone.Ship do
         energy: energy,
         hull: hull,
         age: age,
-        view: display
+        ships: display.ships,
+        missiles: display.missiles
       })
       |> Sandbox.play_function!(["math", "randomseed"], age, 1_000_000)
       |> Sandbox.play(ai_chunk, 1_000_000)
