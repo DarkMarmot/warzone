@@ -85,7 +85,7 @@ defmodule Warzone.Ship do
           position: [px, py],
           energy: energy,
           hull: hull,
-          age: trunc(age / 5),
+          age: age,
           facing: facing,
           display: display
         } = ship,
@@ -102,7 +102,7 @@ defmodule Warzone.Ship do
         speed: speed,
         energy: energy,
         hull: hull,
-        age: age,
+        age: trunc(age/5),
         ships: display.ships,
         missiles: display.missiles
       })
