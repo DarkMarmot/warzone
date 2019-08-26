@@ -42,6 +42,13 @@ defmodule Warzone.Ship do
             ai_state: nil,
             ai_error: nil
 
+  def apply_damage(%Ship{hull: hull} = ship, damage) do
+    case damage >= hull do
+      true -> %Ship{ship | spawn_counter: 30, playing: false}
+      false -> %Ship{ship | hull: hull - damage}
+    end
+  end
+
   def can_see(%Ship{position: p1, scanning_power: scanning_power} , %Ship{position: p2, cloaking_power: cloaking_power}) do
     Battle.distance(p1, p2) - scanning_power + cloaking_power < 0
   end
@@ -78,7 +85,7 @@ defmodule Warzone.Ship do
           position: [px, py],
           energy: energy,
           hull: hull,
-          age: age,
+          age: trunc(age / 5),
           facing: facing,
           display: display
         } = ship,

@@ -77,7 +77,14 @@ defmodule Warzone.Battle do
         %Battle{collisions: collisions, ships_by_id: ships_by_id, missiles_by_id: missiles_by_id} =
           battle
       ) do
-    battle
+
+    collisions
+    |> Enum.reduce(battle, fn %Collision{ship_id: ship_id, missile_id: missile_id}, battle_acc ->
+      missile = %Missile{get_missile(battle_acc, missile_id) | destroyed: true}
+      ship = get_ship(battle_acc, ship_id) |> Ship.apply_damage(missile.power)
+      battle_acc |> put_ship(ship) |> put_missile(missile)
+    end)
+
   end
 
   def get_spatial_hashes([x, y] = _position, 0 = _object_size) do
@@ -348,9 +355,9 @@ defmodule Warzone.Battle do
     %Battle{battle | ships_by_id: Map.put(ships_by_id, id, ship)}
   end
 
-#  def put_missile(%Battle{missiles_by_id: missiles_by_id} = battle, %Missile{id: id} = missile) do
-#    %Battle{battle | missiles_by_id: Map.put(missiles_by_id, id, missile)}
-#  end
+  def put_missile(%Battle{missiles_by_id: missiles_by_id} = battle, %Missile{id: id} = missile) do
+    %Battle{battle | missiles_by_id: Map.put(missiles_by_id, id, missile)}
+  end
 #
 #  def add_missile(
 #        %Battle{missiles_by_id: missiles_by_id, id_counter: id_counter} = battle,
