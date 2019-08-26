@@ -173,6 +173,7 @@ defmodule Warzone.Battle do
           owner_id != ship_id && distance(missile_position, ship_position) < @ship_size
         end)
       end)
+      |> Enum.uniq()
 
     %Battle{battle | collisions: collisions}
   end
