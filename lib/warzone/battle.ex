@@ -1,5 +1,5 @@
 defmodule Warzone.Battle do
-  alias Warzone.{Battle, Ship, Missile, Cache, CommandSet, Collision, MapEnum}
+  alias Warzone.{Battle, Collision, Ship, Missile, Cache, CommandSet, Collision, MapEnum}
 
   @realm_size 10000
   @missile_size 0
@@ -333,9 +333,14 @@ defmodule Warzone.Battle do
 #  end
 
   def submit_code(%Battle{} = battle, id, code) do
-    ship = %Ship{get_ship(battle, id) | code: code, ai_state: nil}
+    ship = get_ship(battle, id)
+    case ship do
+      nil -> join(battle, id) |> submit_code(id, code)
+      _ -> put_ship(battle, %Ship{ship | code: code, ai_state: nil})
+    end
+#    ship = %Ship{get_ship(battle, id) | code: code, ai_state: nil}
 #    IO.puts("update code: #{inspect(id)} ")
-    battle |> put_ship(ship)
+#    battle |> put_ship(ship)
   end
 
   def submit_name(%Battle{} = battle, id, name) do
