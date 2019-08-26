@@ -155,7 +155,7 @@ defmodule Warzone.Battle do
 
     collisions =
       hash_collisions
-      |> Enum.map(fn hash ->
+      |> Enum.flat_map(fn hash ->
         missile_ids = Map.get(missile_ids_by_spatial_hash, hash)
         ship_ids = Map.get(ship_ids_by_spatial_hash, hash)
 
