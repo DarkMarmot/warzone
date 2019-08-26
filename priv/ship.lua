@@ -32,13 +32,15 @@ function scan(power)
     table.insert(commands, cmd)
 end
 
-function nearest_ship()
+
+
+function nearest(things)
     local best_distance = 10000
     local nearest = nil
-    for _,ship in pairs(status.ships) do
-        if ship.distance < best_distance then
-            best_distance = ship.distance
-            nearest = ship
+    for _,thing in pairs(things) do
+        if thing.distance < best_distance then
+            best_distance = thing.distance
+            nearest = thing
         end
     end
     return nearest
