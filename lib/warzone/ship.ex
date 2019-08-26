@@ -9,9 +9,9 @@ defmodule Warzone.Ship do
   @max_hull 100
   # is 10 per input
   @recharge_rate 4
-  @missile_speed 7
+  @missile_speed 6
   @default_scanning_range 150
-  @power_to_speed_factor 0.3
+  @power_to_speed_factor 0.2
   @power_to_cloaking_factor 1
   @power_to_scanning_factor 1
 
@@ -42,9 +42,19 @@ defmodule Warzone.Ship do
             ai_state: nil,
             ai_error: nil
 
+  def spawn(%Ship{} = ship) do
+    range = 200 + :random.uniform() * 300
+    angle = :rand.uniform() * :math.pi() * 2
+    x = :math.cos(angle) * range
+    y = :math.sin(angle) * range
+    %Ship{ship | spawn_counter: 30, playing: true, hull: 100, energy: 100, position: [x, y]}
+  end
+
   def apply_damage(%Ship{hull: hull} = ship, damage) do
     case damage >= hull do
-      true -> %Ship{ship | spawn_counter: 30, playing: false}
+      true ->
+        IO.puts("BOOM!")
+        %Ship{ship | spawn_counter: 30, playing: false}
       false -> %Ship{ship | hull: hull - damage}
     end
   end

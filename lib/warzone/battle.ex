@@ -114,6 +114,7 @@ defmodule Warzone.Battle do
   def get_ship_ids_by_spatial_hash(%Battle{ships_by_id: ships_by_id}) do
     ships_by_id
     |> Map.to_list()
+    |> Enum.filter(fn {id, %Ship{playing: playing}} -> playing == true end)
     |> Enum.flat_map(fn {id, %Ship{position: position}} ->
       hashes = get_spatial_hashes(position, @ship_size)
       hashes |> Enum.map(fn hash -> {hash, id} end)
@@ -186,7 +187,7 @@ defmodule Warzone.Battle do
 
   def spawn_ships_into_battle(%Battle{ships_by_id: ships_by_id} = battle) do
     map_fun = fn
-      %Ship{spawn_counter: 0, playing: false} = ship -> %Ship{ship | playing: true}
+      %Ship{spawn_counter: 0, playing: false} = ship -> Ship.spawn(ship)
       ship -> ship
     end
 
