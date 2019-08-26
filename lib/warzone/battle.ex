@@ -79,7 +79,8 @@ defmodule Warzone.Battle do
       ) do
 
     collisions
-    |> Enum.reduce(battle, fn %Collision{ship_id: ship_id, missile_id: missile_id}, battle_acc ->
+    |> Enum.reduce(battle, fn c, battle_acc ->
+      %Collision{ship_id: ship_id, missile_id: missile_id} = c
       missile = %Missile{get_missile(battle_acc, missile_id) | destroyed: true}
       ship = get_ship(battle_acc, ship_id) |> Ship.apply_damage(missile.power)
       battle_acc |> put_ship(ship) |> put_missile(missile)
