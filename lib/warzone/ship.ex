@@ -8,10 +8,10 @@ defmodule Warzone.Ship do
   @max_energy 100
   @max_hull 100
   # is 10 per input
-  @recharge_rate 2
-  @missile_speed 5
-  @default_scanning_range 300
-  @power_to_speed_factor 0.2
+  @recharge_rate 4
+  @missile_speed 7
+  @default_scanning_range 150
+  @power_to_speed_factor 0.3
   @power_to_cloaking_factor 1
   @power_to_scanning_factor 1
 
@@ -184,24 +184,22 @@ defmodule Warzone.Ship do
         %Command{name: "thrust", param: power} = command
       )
       when is_number(power) do
-    if power > 0 && power <= energy do
 
-      speed = @power_to_speed_factor * power
+      power_used = max(min(power, 10), energy)
+      speed = @power_to_speed_factor * power_used
       radians = @deg_to_radians * facing
       tx = :math.cos(radians) * speed
       ty = :math.sin(radians) * speed
 
       %Ship{
         ship
-        | energy: energy - power,
+        | energy: energy - power_used,
           velocity: [tx, ty],
           speed: speed,
           heading: facing,
           commands: [command | commands]
       }
-    else
-      ship |> Ship.not_enough_energy(command)
-    end
+
   end
 
   def perform_command(
@@ -218,7 +216,9 @@ defmodule Warzone.Ship do
         %Command{name: "fire", param: power} = command
       )
       when is_number(power) do
-    if power > 0 && power <= energy do
+     if power >= 1 do
+       power_used = max(min(power, 10), energy)
+
       radians = @deg_to_radians * facing
       vx = :math.cos(radians) * @missile_speed
       vy = :math.sin(radians) * @missile_speed
@@ -227,7 +227,7 @@ defmodule Warzone.Ship do
         id: {id, missile_counter},
         display_id: to_string(display_id) <> "_" <> to_string(missile_counter),
         owner_id: id,
-        power: power,
+        power: power_used,
         velocity: [vx, vy],
         position: position,
         facing: facing
@@ -235,7 +235,7 @@ defmodule Warzone.Ship do
 
       %Ship{
         ship
-        | energy: energy - power,
+        | energy: energy - power_used,
           missiles_ready: [missile | missiles_ready],
           commands: [command | commands],
           missile_counter: missile_counter + 1
@@ -271,16 +271,16 @@ defmodule Warzone.Ship do
         %Command{name: "cloak", param: power} = command
       )
       when is_number(power) do
-    if power > 0 && power <= energy do
+
+    power_used = max(min(power, 10), energy)
+
       %Ship{
         ship
-        | energy: energy - power,
-          cloaking_power: power * 200,
+        | energy: energy - power_used,
+          cloaking_power: power_used * 50,
           commands: [command | commands]
       }
-    else
-      ship |> Ship.not_enough_energy(command)
-    end
+
   end
 
   def perform_command(
@@ -288,16 +288,14 @@ defmodule Warzone.Ship do
         %Command{name: "scan", param: power} = command
       )
       when is_number(power) do
-    if power > 0 &&  power <= energy do
+    power_used = max(min(power, 10), energy)
       %Ship{
         ship
-        | energy: energy - power,
-          scanning_power: power * 100 + @default_scanning_range,
+        | energy: energy - power_used,
+          scanning_power: power_used * 50 + @default_scanning_range,
           commands: [command | commands]
       }
-    else
-      ship |> Ship.not_enough_energy(command)
-    end
+
   end
 
   def perform_command(%Ship{} = ship, %Command{} = _command) do
