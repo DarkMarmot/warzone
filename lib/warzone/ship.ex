@@ -195,7 +195,8 @@ defmodule Warzone.Ship do
       )
       when is_number(power) do
 
-      power_used = max(min(power, 10), energy)
+      power_used = max(Enum.min([power, energy, 10]), 0)
+
       speed = @power_to_speed_factor * power_used
       radians = @deg_to_radians * facing
       tx = :math.cos(radians) * speed
@@ -227,9 +228,9 @@ defmodule Warzone.Ship do
       )
       when is_number(power) do
      if power >= 1 do
-       power_used = max(min(power, 10), energy)
+       power_used = Enum.min([power, energy, 10])
 
-      radians = @deg_to_radians * facing
+       radians = @deg_to_radians * facing
       vx = :math.cos(radians) * @missile_speed
       vy = :math.sin(radians) * @missile_speed
 
@@ -282,9 +283,10 @@ defmodule Warzone.Ship do
       )
       when is_number(power) do
 
-    power_used = max(min(power, 10), energy)
+    power_used = max(Enum.min([power, energy, 10]), 0)
 
-      %Ship{
+
+    %Ship{
         ship
         | energy: energy - power_used,
           cloaking_power: power_used * 50,
@@ -298,8 +300,10 @@ defmodule Warzone.Ship do
         %Command{name: "scan", param: power} = command
       )
       when is_number(power) do
-    power_used = max(min(power, 10), energy)
-      %Ship{
+    power_used = max(Enum.min([power, energy, 10]), 0)
+
+
+    %Ship{
         ship
         | energy: energy - power_used,
           scanning_power: power_used * 50 + @default_scanning_range,
