@@ -18,6 +18,7 @@ defmodule Warzone.Ship do
 
   defstruct id: nil,
             display_id: nil,
+            missile_color: nil,
             name: nil,
             code: nil,
             playing: false,
@@ -89,7 +90,7 @@ defmodule Warzone.Ship do
       cond do
         m.kill && m.attacker == name -> "You destroyed " <> m.defender <> "!!!"
         m.attacker == name -> "You struck " <> m.defender <> " for " <> to_string(m.damage) <> " hull damage."
-        m.kill && m.defender == name -> " has utterly destroyed you!"
+        m.kill && m.defender == name -> m.attacker <> " has utterly destroyed you!"
         m.defender == name -> m.attacker <> " blasts you for " <> to_string(m.damage) <> " hull damage."
         true -> nil
       end

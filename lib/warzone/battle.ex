@@ -22,7 +22,8 @@ defmodule Warzone.Battle do
   end
 
   def join(%Battle{ships_by_id: ships_by_id, id_counter: id_counter} = battle, id, user_name) do
-    put_ship(battle, %Ship{id: id, display_id: "ship_" <> to_string(id_counter), name: user_name})
+    missile_color = :erlang.phash2(user_name, 360)
+    put_ship(battle, %Ship{id: id, display_id: "ship_" <> to_string(id_counter), name: user_name, missile_color: missile_color})
     |> advance_counter()
   end
 
