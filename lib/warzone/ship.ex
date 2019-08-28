@@ -248,6 +248,7 @@ defmodule Warzone.Ship do
           commands: commands,
           missiles_ready: missiles_ready,
           missile_counter: missile_counter,
+          missile_color: missile_color,
           display_id: display_id
         } = ship,
         %Command{name: "fire", param: power} = command
@@ -267,7 +268,8 @@ defmodule Warzone.Ship do
         power: power_used,
         velocity: [vx, vy],
         position: position,
-        facing: facing
+        facing: facing,
+        color: missile_color
       }
 
       %Ship{

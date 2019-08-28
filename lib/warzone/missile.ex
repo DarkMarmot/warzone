@@ -8,7 +8,8 @@ defmodule Warzone.Missile do
             position: [0, 0],
             age: 0,
             owner_id: nil,
-            destroyed: false
+            destroyed: false,
+            color: 0
 
   def display(%Missile{display_id: display_id, position: [x, y], facing: facing, power: power}, [ship_x, ship_y]) do
     %{
