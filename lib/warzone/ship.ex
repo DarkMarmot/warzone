@@ -67,11 +67,11 @@ defmodule Warzone.Ship do
     Battle.distance(p1, p2) - scanning_power < 0
   end
 
-  def display(%Ship{display_id: display_id, position: [x, y]}, [ship_x, ship_y]) do
+  def display(%Ship{name: name, position: [x, y]}, [ship_x, ship_y]) do
     dx = x - ship_x
     dy = y - ship_y
     %{
-      name: display_id,
+      name: name,
       x: dx,
       y: dy,
       direction: :math.atan2(dy, dx) * @radians_to_deg |> keep_angle_between_0_and_360(),
