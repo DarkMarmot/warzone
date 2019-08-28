@@ -46,6 +46,7 @@ defmodule Warzone.Battle do
     |> determine_collisions()
     |> resolve_collisions()
     |> render_scanners()
+    |> render_messages()
     |> clear_messages()
 
     #    |> helm_ships()
@@ -96,10 +97,6 @@ defmodule Warzone.Battle do
       |> put_missile(missile)
     end)
 
-  end
-
-  def put_message(%Battle{messages: messages} = battle, :collision, %Missile{} = missile, %Ship{} = ship) do
-    battle
   end
 
   def get_spatial_hashes([x, y] = _position, 0 = _object_size) do

@@ -83,8 +83,8 @@ defmodule Warzone.Ship do
 
     new_rendered_messages =
       new_messages
-    |> Enum.map(fn m ->
-
+    |> Enum.map(fn message ->
+      m = message.content
       text =
       cond do
         m.kill && m.attacker == name -> "You destroyed " <> m.defender <> "!!!"
@@ -94,7 +94,7 @@ defmodule Warzone.Ship do
         true -> nil
       end
 
-      %{m | text: text}
+      %{stardate: message.created_at, text: text}
     end)
     |> Enum.reject(fn m -> m.text == nil end)
 
