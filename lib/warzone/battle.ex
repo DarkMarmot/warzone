@@ -254,6 +254,9 @@ defmodule Warzone.Battle do
     %Battle{battle | ships_by_id: ships_with_updated_ais}
   end
 
+  def render_scanner(%Battle{} = battle, %Ship{playing: false} = ship) do
+    %Ship{ship | display: %{missiles: [], ships: []}}
+  end
 
   def render_scanner(%Battle{missile_ids_by_spatial_hash: missile_ids_by_spatial_hash, ship_ids_by_spatial_hash: ship_ids_by_spatial_hash} = battle, %Ship{position: position, scanning_power: scanning_power} = ship) do
 
@@ -303,7 +306,7 @@ defmodule Warzone.Battle do
     commands_by_id =
       Task.Supervisor.async_stream_nolink(
         Warzone.SandboxTaskSupervisor,
-        ships_by_id |> Map.values(),
+        ships_by_id |> Map.values() |> Enum.filter(fn %Ship{} = ship -> ship.playing == true end),
         fn %Ship{} = ship ->
           Ship.generate_commands(ship, base_ai)
         end,
