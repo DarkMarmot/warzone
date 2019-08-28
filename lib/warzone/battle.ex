@@ -46,10 +46,15 @@ defmodule Warzone.Battle do
     |> determine_collisions()
     |> resolve_collisions()
     |> render_scanners()
+    |> clear_messages()
 
     #    |> helm_ships()
     #   |> asteroid_damage() for things beyond bounds
     #   |> report_back()
+  end
+
+  def clear_messages(%Battle{} = battle) do
+    %Battle{battle | messages: []}
   end
 
   def spawn_fired_missiles_into_battle(
@@ -278,6 +283,11 @@ defmodule Warzone.Battle do
 
   def render_scanners(%Battle{ships_by_id: ships_by_id} = battle) do
     map_fun = fn %Ship{} = ship -> Battle.render_scanner(battle, ship) end
+    %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
+  end
+
+  def render_messages(%Battle{messages: messages, ships_by_id: ships_by_id} = battle) do
+    map_fun = fn %Ship{} = ship -> Ship.render_messages(ship, messages) end
     %Battle{battle | ships_by_id: ships_by_id |> MapEnum.map(map_fun)}
   end
 

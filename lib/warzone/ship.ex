@@ -79,6 +79,28 @@ defmodule Warzone.Ship do
     }
   end
 
+  def render_messages(%Ship{messages: messages, name: name} = ship, new_messages) do
+
+    new_rendered_messages =
+      new_messages
+    |> Enum.map(fn m ->
+
+      text =
+      cond do
+        m.kill && m.attacker == name -> "You destroyed " <> m.defender <> "!!!"
+        m.attacker == name -> "You struck " <> m.defender <> " for " <> to_string(m.damage) <> " hull damage."
+        m.kill && m.defender == name -> " has utterly destroyed you!"
+        m.defender == name -> m.attacker <> " blasts you for " <> to_string(m.damage) <> " hull damage."
+           end
+      %{m | text: text}
+    end)
+
+    resulting_messages = (new_rendered_messages ++ messages) |> Enum.take(10)
+    %Ship{ship | messages: resulting_messages}
+  end
+
+
+
   def generate_commands(%Ship{id: id, ai_state: nil}, _base_ai) do
     %CommandSet{id: id, error: :no_ai}
   end
