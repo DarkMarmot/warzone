@@ -7,7 +7,6 @@ defmodule Warzone.Application do
     IO.puts("app start!")
 
     children = [
-      {Warzone.Cache, []},
       {Task.Supervisor, name: Warzone.TaskSupervisor},
       {Task.Supervisor, name: Warzone.SandboxTaskSupervisor},
       {Warzone.BattleServer, []}

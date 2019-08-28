@@ -1,5 +1,5 @@
 defmodule Warzone.Battle do
-  alias Warzone.{Battle, Collision, Ship, Missile, Cache, CommandSet, Collision, MapEnum}
+  alias Warzone.{Battle, Collision, Ship, Missile, CommandSet, Collision, MapEnum}
 
   @realm_size 10000
   @missile_size 0
@@ -14,6 +14,7 @@ defmodule Warzone.Battle do
             collisions: [],
             commands_by_id: %{},
             stardate: 0,
+            messages: [],
             id_counter: 0
 
   def advance_counter(%Battle{id_counter: id_counter} = battle) do
@@ -27,11 +28,6 @@ defmodule Warzone.Battle do
 
   def leave(%Battle{ships_by_id: ships_by_id} = battle, id) do
     %Battle{battle | ships_by_id: Map.delete(ships_by_id, id)}
-  end
-
-  def get_spawn_position() do
-    # todo random
-    [0, 0]
   end
 
   def update(
@@ -82,10 +78,23 @@ defmodule Warzone.Battle do
     |> Enum.reduce(battle, fn c, battle_acc ->
       %Collision{ship_id: ship_id, missile_id: missile_id} = c
       missile = %Missile{get_missile(battle_acc, missile_id) | destroyed: true}
-      ship = get_ship(battle_acc, ship_id) |> Ship.apply_damage(missile.power)
-      battle_acc |> put_ship(ship) |> put_missile(missile)
+      attacker = get_ship(battle_acc, missile.owner_id)
+      defender = get_ship(battle_acc, ship_id)
+      if defender.playing do
+          kill = missile.power >= defender.hull
+          damaged_defender = defender |> Ship.apply_damage(missile.power)
+          message = %{created_at: battle_acc.stardate, content: %{type: :collision, attacker: attacker.name, defender: defender.name, damage: missile.power, kill: kill}}
+          battle_acc |> put_ship(damaged_defender) |> put_message(message)
+      else
+         battle_acc
+      end
+      |> put_missile(missile)
     end)
 
+  end
+
+  def put_message(%Battle{messages: messages} = battle, :collision, %Missile{} = missile, %Ship{} = ship) do
+    battle
   end
 
   def get_spatial_hashes([x, y] = _position, 0 = _object_size) do
@@ -366,6 +375,10 @@ defmodule Warzone.Battle do
 
   def put_missile(%Battle{missiles_by_id: missiles_by_id} = battle, %Missile{id: id} = missile) do
     %Battle{battle | missiles_by_id: Map.put(missiles_by_id, id, missile)}
+  end
+
+  def put_message(%Battle{messages: messages} = battle, message) do
+    %Battle{battle | messages: [message | messages]}
   end
 #
 #  def add_missile(
