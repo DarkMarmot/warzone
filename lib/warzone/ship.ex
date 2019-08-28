@@ -107,11 +107,15 @@ defmodule Warzone.Ship do
 
 
   def generate_commands(%Ship{id: id, ai_state: nil}, _base_ai) do
-    %CommandSet{id: id, error: :no_ai}
+    %CommandSet{id: id, error: :missing_ai}
   end
 
   def generate_commands(%Ship{id: id, ai_state: {:error, _ai_reason}}, _base_ai) do
     %CommandSet{id: id, error: :ai_could_not_compile}
+  end
+
+  def generate_commands(%Ship{id: id, playing: false}, _base_ai) do
+    %CommandSet{id: id, error: :ai_ready}
   end
 
   def generate_commands(

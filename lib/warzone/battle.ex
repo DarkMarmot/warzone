@@ -296,7 +296,7 @@ defmodule Warzone.Battle do
     # returns map of ship_id to command_list
     default_failures =
       ships_by_id
-      |> MapEnum.filter_map(fn %Ship{playing: playing} -> playing == true end,
+      |> MapEnum.map(
            fn %Ship{id: id} = ship ->
         %CommandSet{id: id, error: :ai_timeout_error}
       end)
@@ -309,7 +309,7 @@ defmodule Warzone.Battle do
     commands_by_id =
       Task.Supervisor.async_stream_nolink(
         Warzone.SandboxTaskSupervisor,
-        ships_by_id |> Map.values() |> Enum.filter(fn %Ship{} = ship -> ship.playing == true end),
+        ships_by_id |> Map.values(),
         fn %Ship{} = ship ->
           Ship.generate_commands(ship, base_ai)
         end,
