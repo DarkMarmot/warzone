@@ -91,9 +91,12 @@ defmodule Warzone.Ship do
         m.attacker == name -> "You struck " <> m.defender <> " for " <> to_string(m.damage) <> " hull damage."
         m.kill && m.defender == name -> " has utterly destroyed you!"
         m.defender == name -> m.attacker <> " blasts you for " <> to_string(m.damage) <> " hull damage."
-           end
+        true -> nil
+      end
+
       %{m | text: text}
     end)
+    |> Enum.reject(fn m -> m.text == nil end)
 
     resulting_messages = (new_rendered_messages ++ messages) |> Enum.take(10)
     %Ship{ship | messages: resulting_messages}
