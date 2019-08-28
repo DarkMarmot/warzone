@@ -93,7 +93,7 @@ defmodule Warzone.BattleServer do
   end
 
   def handle_cast({:debug, _player_pid}, %Battle{} = battle) do
-    IO.inspect(battle)
+    battle.messages
     {:noreply, battle}
   end
 
