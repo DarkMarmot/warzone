@@ -29,7 +29,7 @@ defmodule Warzone.Missile do
   end
 
   def age(%Missile{age: age, power: power} = missile) do
-    %Missile{missile | age: age + 1, destroyed: age >= power * 20}
+    %Missile{missile | age: age + 1, destroyed: age >= power * 10}
   end
 
   def move(%Missile{velocity: [vx, vy], position: [px, py]} = missile) do

@@ -9,7 +9,7 @@ defmodule Warzone.Ship do
   @max_hull 100
   # is 10 per input
   @recharge_rate 4
-  @missile_speed 6
+  @missile_speed 5
   @default_scanning_range 150
   @power_to_speed_factor 0.2
   @power_to_cloaking_factor 1
