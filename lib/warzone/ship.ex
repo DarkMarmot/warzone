@@ -41,7 +41,7 @@ defmodule Warzone.Ship do
             facing: 0,
             display: %{ships: [], missiles: []},
             ai_state: nil,
-            ai_error: nil,
+            ai_error: :missing_ai,
             stardate: 0
 
   def spawn(%Ship{} = ship) do
