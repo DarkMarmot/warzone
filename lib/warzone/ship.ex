@@ -81,7 +81,7 @@ defmodule Warzone.Ship do
     }
   end
 
-  def render_messages(%Ship{messages: messages, name: name} = ship, new_messages) do
+  def render_messages(%Ship{messages: messages, name: name, age: age} = ship, new_messages) do
 
     new_rendered_messages =
       new_messages
@@ -96,7 +96,7 @@ defmodule Warzone.Ship do
         true -> nil
       end
 
-      %{stardate: message.created_at, text: text}
+      %{stardate: age, text: text}
     end)
     |> Enum.reject(fn m -> m.text == nil end)
 
