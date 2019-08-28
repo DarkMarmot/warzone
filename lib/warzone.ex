@@ -17,7 +17,7 @@ defmodule Warzone do
   end
 
   def test do
-    Warzone.BattleServer.join()
+    Warzone.BattleServer.join("gar")
     Warzone.BattleServer.submit_code("thrust(10)\nturn(5)")
   end
 

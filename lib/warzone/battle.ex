@@ -20,8 +20,8 @@ defmodule Warzone.Battle do
     %Battle{battle| id_counter: id_counter + 1}
   end
 
-  def join(%Battle{ships_by_id: ships_by_id, id_counter: id_counter} = battle, id) do
-    put_ship(battle, %Ship{id: id, display_id: "ship_" <> to_string(id_counter), position: get_spawn_position()})
+  def join(%Battle{ships_by_id: ships_by_id, id_counter: id_counter} = battle, id, user_name) do
+    put_ship(battle, %Ship{id: id, display_id: "ship_" <> to_string(id_counter), name: user_name})
     |> advance_counter()
   end
 
@@ -186,6 +186,7 @@ defmodule Warzone.Battle do
 
 
   def spawn_ships_into_battle(%Battle{ships_by_id: ships_by_id} = battle) do
+
     map_fun = fn
       %Ship{spawn_counter: 0, playing: false} = ship -> Ship.spawn(ship)
       ship -> ship
@@ -338,7 +339,7 @@ defmodule Warzone.Battle do
   def submit_code(%Battle{} = battle, id, code) do
     ship = get_ship(battle, id)
     case ship do
-      nil -> join(battle, id) |> submit_code(id, code)
+      nil -> battle # join(battle, id) |> submit_code(id, code)
       _ -> put_ship(battle, %Ship{ship | code: code, ai_state: nil})
     end
 #    ship = %Ship{get_ship(battle, id) | code: code, ai_state: nil}

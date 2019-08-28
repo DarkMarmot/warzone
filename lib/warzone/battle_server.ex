@@ -1,5 +1,5 @@
 defmodule Warzone.BattleServer do
-  alias Warzone.{Battle, Ship, Missile, Cache, Player}
+  alias Warzone.{Battle}
 
   use GenServer
 
@@ -24,9 +24,9 @@ defmodule Warzone.BattleServer do
     {:ok, %Battle{base_ai: base_ai}}
   end
 
-  def join() do
+  def join(user_name) do
     player_pid = self()
-    GenServer.cast(__MODULE__, {:join, player_pid})
+    GenServer.cast(__MODULE__, {:join, player_pid, user_name})
   end
 
   def leave() do
@@ -72,8 +72,8 @@ defmodule Warzone.BattleServer do
     {:noreply, battle}
   end
 
-  def handle_cast({:join, player_pid}, %Battle{} = battle) do
-    {:noreply, Battle.join(battle, player_pid)}
+  def handle_cast({:join, player_pid, user_name}, %Battle{} = battle) do
+    {:noreply, Battle.join(battle, player_pid, user_name)}
   end
 
   def handle_cast({:leave, player_pid}, %Battle{} = battle) do
@@ -92,7 +92,7 @@ defmodule Warzone.BattleServer do
     {:noreply, Battle.submit_code(battle, player_pid, code)}
   end
 
-  def handle_cast({:debug, player_pid}, %Battle{} = battle) do
+  def handle_cast({:debug, _player_pid}, %Battle{} = battle) do
     IO.inspect(battle)
     {:noreply, battle}
   end
