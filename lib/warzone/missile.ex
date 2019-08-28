@@ -11,13 +11,14 @@ defmodule Warzone.Missile do
             destroyed: false,
             color: 0
 
-  def display(%Missile{display_id: display_id, position: [x, y], facing: facing, power: power}, [ship_x, ship_y]) do
+  def display(%Missile{display_id: display_id, position: [x, y], facing: facing, power: power, color: color}, [ship_x, ship_y]) do
     %{
       name: display_id,
       x: x - ship_x,
       y: y - ship_y,
       facing: facing,
-      power: power
+      power: power,
+      color: color
     }
   end
 
