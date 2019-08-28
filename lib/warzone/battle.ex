@@ -296,7 +296,10 @@ defmodule Warzone.Battle do
     # returns map of ship_id to command_list
     default_failures =
       ships_by_id
-      |> MapEnum.map(fn %Ship{id: id} = ship -> %CommandSet{id: id, error: :ai_timeout_error} end)
+      |> MapEnum.filter_map(fn %Ship{playing: playing} -> playing == true end,
+           fn %Ship{id: id} = ship ->
+        %CommandSet{id: id, error: :ai_timeout_error}
+      end)
 
     #    commands_by_id =
     #    Parallel.map(ships_by_id |> Map.values(), fn %Ship{} = ship -> Ship.generate_commands(ship, base_ai) end)
