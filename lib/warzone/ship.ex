@@ -44,8 +44,8 @@ defmodule Warzone.Ship do
             ai_error: :missing_ai,
             stardate: 0
 
-  def spawn(%Ship{} = ship) do
-    range = 200 + :random.uniform() * 300
+  def spawn(%Ship{} = ship, ship_count) do
+    range = 100 + :random.uniform() * ship_count * 50
     angle = :rand.uniform() * :math.pi() * 2
     x = :math.cos(angle) * range
     y = :math.sin(angle) * range

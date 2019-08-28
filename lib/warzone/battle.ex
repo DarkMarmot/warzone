@@ -199,8 +199,9 @@ defmodule Warzone.Battle do
 
   def spawn_ships_into_battle(%Battle{ships_by_id: ships_by_id} = battle) do
 
+    ship_count = ships_by_id |> Map.keys() |> Enum.count()
     map_fun = fn
-      %Ship{spawn_counter: 0, playing: false} = ship -> Ship.spawn(ship)
+      %Ship{spawn_counter: 0, playing: false} = ship -> Ship.spawn(ship, ship_count)
       ship -> ship
     end
 
