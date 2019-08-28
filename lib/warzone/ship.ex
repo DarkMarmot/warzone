@@ -162,7 +162,7 @@ defmodule Warzone.Ship do
 
       {:ok, lua_state} ->
         commands = lua_state |> Sandbox.get!("commands") |> parse_lua_commands()
-        %CommandSet{id: id, commands: commands}
+        %CommandSet{id: id, commands: commands, error: :ai_engaged}
     end
   end
 
