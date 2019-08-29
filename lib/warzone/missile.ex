@@ -1,5 +1,6 @@
 defmodule Warzone.Missile do
   alias Warzone.Missile
+
   defstruct id: 0,
             display_id: nil,
             power: 0,
@@ -11,7 +12,16 @@ defmodule Warzone.Missile do
             destroyed: false,
             color: 0
 
-  def display(%Missile{display_id: display_id, position: [x, y], facing: facing, power: power, color: color}, [ship_x, ship_y]) do
+  def display(
+        %Missile{
+          display_id: display_id,
+          position: [x, y],
+          facing: facing,
+          power: power,
+          color: color
+        },
+        [ship_x, ship_y]
+      ) do
     %{
       name: display_id,
       x: x - ship_x,
@@ -35,6 +45,4 @@ defmodule Warzone.Missile do
   def move(%Missile{velocity: [vx, vy], position: [px, py]} = missile) do
     %Missile{missile | position: [px + vx, py + vy]}
   end
-
-
 end

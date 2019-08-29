@@ -1,6 +1,6 @@
 
 commands = {}
-status = {hull=100, energy=100, position = {x=0, y=0}, velocity = {x=0, y=0}, age=0, ships={}, missiles={}}
+status = {hull=100, energy=100, x=0, y=0, age=0, ships={}, missiles={}}
 
 function face(angle)
     local cmd = {name="face", param=angle}
@@ -32,10 +32,8 @@ function scan(power)
     table.insert(commands, cmd)
 end
 
-
-
 function nearest(things)
-    local best_distance = 10000
+    local best_distance = math.huge
     local nearest = nil
     for _,thing in pairs(things) do
         if thing.distance < best_distance then

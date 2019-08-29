@@ -9,12 +9,11 @@ defmodule Warzone.Ship do
   @max_hull 100
   # is 10 per input
   @recharge_rate 4
-  @missile_speed 5
+  @missile_speed 6
   @default_scanning_range 150
-  @power_to_speed_factor 0.2
+  @power_to_speed_factor 0.4
   @power_to_cloaking_factor 1
   @power_to_scanning_factor 1
-
 
   defstruct id: nil,
             display_id: nil,
@@ -57,11 +56,16 @@ defmodule Warzone.Ship do
       true ->
         IO.puts("BOOM!")
         %Ship{ship | spawn_counter: 30, playing: false}
-      false -> %Ship{ship | hull: hull - damage}
+
+      false ->
+        %Ship{ship | hull: hull - damage}
     end
   end
 
-  def can_see(%Ship{position: p1, scanning_power: scanning_power} , %Ship{position: p2, cloaking_power: cloaking_power}) do
+  def can_see(%Ship{position: p1, scanning_power: scanning_power}, %Ship{
+        position: p2,
+        cloaking_power: cloaking_power
+      }) do
     Battle.distance(p1, p2) - scanning_power + cloaking_power < 0
   end
 
@@ -72,39 +76,47 @@ defmodule Warzone.Ship do
   def display(%Ship{name: name, position: [x, y]}, [ship_x, ship_y]) do
     dx = x - ship_x
     dy = y - ship_y
+
     %{
       name: name,
       x: dx,
       y: dy,
-      direction: :math.atan2(dy, dx) * @radians_to_deg |> keep_angle_between_0_and_360(),
+      direction: (:math.atan2(dy, dx) * @radians_to_deg) |> keep_angle_between_0_and_360(),
       distance: :math.sqrt(dx * dx + dy * dy)
     }
   end
 
   def render_messages(%Ship{messages: messages, name: name, age: age} = ship, new_messages) do
-
     new_rendered_messages =
       new_messages
-    |> Enum.map(fn message ->
-      m = message.content
-      text =
-      cond do
-        m.kill && m.attacker == name -> "You destroyed " <> m.defender <> "!!!"
-        m.attacker == name -> "You struck " <> m.defender <> " for " <> to_string(m.damage) <> " hull damage."
-        m.kill && m.defender == name -> m.attacker <> " has utterly destroyed you!"
-        m.defender == name -> m.attacker <> " blasts you for " <> to_string(m.damage) <> " hull damage."
-        true -> nil
-      end
+      |> Enum.map(fn message ->
+        m = message.content
 
-      %{stardate: age, text: text}
-    end)
-    |> Enum.reject(fn m -> m.text == nil end)
+        text =
+          cond do
+            m.kill && m.attacker == name ->
+              "You destroyed " <> m.defender <> "!!!"
+
+            m.attacker == name ->
+              "You struck " <> m.defender <> " for " <> to_string(m.damage) <> " hull damage."
+
+            m.kill && m.defender == name ->
+              m.attacker <> " has utterly destroyed you!"
+
+            m.defender == name ->
+              m.attacker <> " blasts you for " <> to_string(m.damage) <> " hull damage."
+
+            true ->
+              nil
+          end
+
+        %{stardate: age, text: text}
+      end)
+      |> Enum.reject(fn m -> m.text == nil end)
 
     resulting_messages = (new_rendered_messages ++ messages) |> Enum.take(10)
     %Ship{ship | messages: resulting_messages}
   end
-
-
 
   def generate_commands(%Ship{id: id, ai_state: nil}, _base_ai) do
     %CommandSet{id: id, error: :missing_ai}
@@ -133,7 +145,6 @@ defmodule Warzone.Ship do
         base_ai
       ) do
 
-
     ai_play_result =
       base_ai
       |> Sandbox.set!("status", %{
@@ -143,15 +154,12 @@ defmodule Warzone.Ship do
         speed: speed,
         energy: energy,
         hull: hull,
-        age: trunc(age/5),
+        stardate: trunc(age / 5),
         ships: display.ships,
         missiles: display.missiles
       })
       |> Sandbox.play_function!(["math", "randomseed"], age, 1_000_000)
       |> Sandbox.play(ai_chunk, 1_000_000)
-
-
-    #      |> Sandbox.moo(ai_chunk)
 
     case ai_play_result do
       {:error, {:reductions, _}} ->
@@ -164,18 +172,26 @@ defmodule Warzone.Ship do
         commands = lua_state |> Sandbox.get!("commands") |> parse_lua_commands()
         %CommandSet{id: id, commands: commands, error: :ai_engaged}
     end
+
   end
 
-  def parse_lua_commands(commands) do
-    commands
-    |> Map.new()
-    |> Map.values()
-    |> Enum.map(&Map.new/1)
-    |> Enum.map(fn m -> %Command{name: Map.get(m, "name"), param: Map.get(m, "param")} end)
+  def parse_lua_commands(commands) when is_list(commands) do
+    try do
+      commands
+      |> Map.new()
+      |> Map.values()
+      |> Enum.map(&Map.new/1)
+      |> Enum.map(fn m -> %Command{name: Map.get(m, "name"), param: Map.get(m, "param")} end)
+    rescue
+      e -> []
+    end
+  end
+
+  def parse_lua_commands(_commands) do
+    []
   end
 
   def update(%Ship{id: id} = ship) do
-
     Process.send(id, {:ship_status, ship}, [])
 
     ship
@@ -225,23 +241,21 @@ defmodule Warzone.Ship do
         %Command{name: "thrust", param: power} = command
       )
       when is_number(power) do
+    power_used = max(Enum.min([power, energy, 10]), 0)
 
-      power_used = max(Enum.min([power, energy, 10]), 0)
+    speed = @power_to_speed_factor * power_used
+    radians = @deg_to_radians * facing
+    tx = :math.cos(radians) * speed
+    ty = :math.sin(radians) * speed
 
-      speed = @power_to_speed_factor * power_used
-      radians = @deg_to_radians * facing
-      tx = :math.cos(radians) * speed
-      ty = :math.sin(radians) * speed
-
-      %Ship{
-        ship
-        | energy: energy - power_used,
-          velocity: [tx, ty],
-          speed: speed,
-          heading: facing,
-          commands: [command | commands]
-      }
-
+    %Ship{
+      ship
+      | energy: energy - power_used,
+        velocity: [tx, ty],
+        speed: speed,
+        heading: facing,
+        commands: [command | commands]
+    }
   end
 
   def perform_command(
@@ -259,10 +273,10 @@ defmodule Warzone.Ship do
         %Command{name: "fire", param: power} = command
       )
       when is_number(power) do
-     if power >= 1 do
-       power_used = Enum.min([power, energy, 10])
+    if power >= 1 do
+      power_used = Enum.min([power, energy, 10])
 
-       radians = @deg_to_radians * facing
+      radians = @deg_to_radians * facing
       vx = :math.cos(radians) * @missile_speed
       vy = :math.sin(radians) * @missile_speed
 
@@ -298,7 +312,7 @@ defmodule Warzone.Ship do
   end
 
   def keep_angle_between_0_and_360(angle) do
-    angle -  :math.floor(angle/360) * 360
+    angle - :math.floor(angle / 360) * 360
   end
 
   def perform_command(
@@ -306,8 +320,11 @@ defmodule Warzone.Ship do
         %Command{name: "turn", param: angle} = command
       )
       when is_number(angle) do
-
-    %Ship{ship | facing: keep_angle_between_0_and_360(facing + angle), commands: [command | commands]}
+    %Ship{
+      ship
+      | facing: keep_angle_between_0_and_360(facing + angle),
+        commands: [command | commands]
+    }
   end
 
   def perform_command(
@@ -315,17 +332,14 @@ defmodule Warzone.Ship do
         %Command{name: "cloak", param: power} = command
       )
       when is_number(power) do
-
     power_used = max(Enum.min([power, energy, 10]), 0)
 
-
     %Ship{
-        ship
-        | energy: energy - power_used,
-          cloaking_power: power_used * 50,
-          commands: [command | commands]
-      }
-
+      ship
+      | energy: energy - power_used,
+        cloaking_power: power_used * 50,
+        commands: [command | commands]
+    }
   end
 
   def perform_command(
@@ -335,14 +349,12 @@ defmodule Warzone.Ship do
       when is_number(power) do
     power_used = max(Enum.min([power, energy, 10]), 0)
 
-
     %Ship{
-        ship
-        | energy: energy - power_used,
-          scanning_power: power_used * 50 + @default_scanning_range,
-          commands: [command | commands]
-      }
-
+      ship
+      | energy: energy - power_used,
+        scanning_power: power_used * 50 + @default_scanning_range,
+        commands: [command | commands]
+    }
   end
 
   def perform_command(%Ship{} = ship, %Command{} = _command) do

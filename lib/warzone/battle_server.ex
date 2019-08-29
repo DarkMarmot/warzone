@@ -7,7 +7,6 @@ defmodule Warzone.BattleServer do
   @input_timestep 5000
   @compile_timestep 2500
 
-
   @updates_per_input @input_timestep / @physics_timestep
 
   def start_link(_) do
@@ -50,7 +49,7 @@ defmodule Warzone.BattleServer do
   end
 
   def handle_info({:receive_commands, commands_by_id}, %Battle{} = battle) do
-#    IO.inspect("got commands #{inspect(commands_by_id)}")
+    #    IO.inspect("got commands #{inspect(commands_by_id)}")
     {:noreply, %Battle{battle | commands_by_id: commands_by_id}}
   end
 
@@ -85,9 +84,9 @@ defmodule Warzone.BattleServer do
   end
 
   def handle_cast({:submit_code, player_pid, code}, %Battle{} = battle) do
-#    Task.Supervisor.async_nolink(Warzone.TaskSupervisor, fn ->
-#      Battle.submit_code(battle, player_pid, code)
-#    end)
+    #    Task.Supervisor.async_nolink(Warzone.TaskSupervisor, fn ->
+    #      Battle.submit_code(battle, player_pid, code)
+    #    end)
 
     {:noreply, Battle.submit_code(battle, player_pid, code)}
   end
@@ -113,11 +112,12 @@ defmodule Warzone.BattleServer do
     Process.demonitor(ref, [:flush])
     {:noreply, battle |> Battle.distribute_ai_states_to_ships(ai_states_by_id)}
   end
-#  def handle_info({ref, {:submitted_code, id, code, ai_state}}, %Battle{} = battle)
-#      when is_reference(ref) do
-#    Process.demonitor(ref, [:flush])
-#    {:noreply, battle |> Battle.update_code(id, code, ai_state)}
-#  end
+
+  #  def handle_info({ref, {:submitted_code, id, code, ai_state}}, %Battle{} = battle)
+  #      when is_reference(ref) do
+  #    Process.demonitor(ref, [:flush])
+  #    {:noreply, battle |> Battle.update_code(id, code, ai_state)}
+  #  end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, %Battle{} = battle) do
     IO.inspect("down!: #{inspect(pid)}")
