@@ -1,6 +1,9 @@
 defmodule Warzone.Missile do
   alias Warzone.Missile
 
+  @deg_to_radians :math.pi() / 180.0
+  @radians_to_deg 1.0 / @deg_to_radians
+
   defstruct id: 0,
             display_id: nil,
             power: 0,
@@ -22,14 +25,24 @@ defmodule Warzone.Missile do
         },
         [ship_x, ship_y]
       ) do
+
+    dx = x - ship_x
+    dy = y - ship_y
+
     %{
       name: display_id,
-      x: x - ship_x,
-      y: y - ship_y,
-      facing: facing,
+      x: dx,
+      y: dy,
+      heading: facing,
       power: power,
-      color: color
+      color: color,
+      direction: (:math.atan2(dy, dx) * @radians_to_deg) |> keep_angle_between_0_and_360(),
+      distance: :math.sqrt(dx * dx + dy * dy)
     }
+  end
+
+  def keep_angle_between_0_and_360(angle) do
+    angle - :math.floor(angle / 360) * 360
   end
 
   def update(%Missile{} = missile) do
